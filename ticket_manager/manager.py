@@ -18,3 +18,6 @@ class TicketManager:
 
     def ids(self):
         return list(self._tickets.keys())
+
+    def remove(self, ticket_id):
+        del self._tickets[ticket_id]
