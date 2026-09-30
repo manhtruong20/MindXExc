@@ -118,3 +118,19 @@ def test_invalid_update_propagates_error_and_changes_nothing(manager, ticket):
         manager.update(ticket.id, title="New title", priority="InvalidPrio")
 
     assert manager.get(ticket.id).title == "Printer broken"
+
+def test_manager_iterates_tickets_in_insertion_order(manager, ticket, other_ticket):
+    manager.add(other_ticket)
+    manager.add(ticket)
+
+    assert list(manager) == [other_ticket, ticket]
+
+
+def test_iterating_manager_is_safe_while_removing(manager, ticket, other_ticket):
+    manager.add(ticket)
+    manager.add(other_ticket)
+
+    for t in manager:
+        manager.remove(t.id)
+
+    assert manager.ids() == []
