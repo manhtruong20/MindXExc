@@ -72,3 +72,26 @@ def test_ids_are_returned_in_insertion_order(manager, ticket, other_ticket):
     manager.add(ticket)
 
     assert manager.ids() == [other_ticket.id, ticket.id]
+
+
+def test_can_remove_ticket(manager, ticket):
+    manager.add(ticket)
+
+    manager.remove(ticket.id)
+
+    assert manager.ids() == []
+    assert manager.get(ticket.id) is None
+
+
+def test_removing_a_ticket_keeps_the_others(manager, ticket, other_ticket):
+    manager.add(ticket)
+    manager.add(other_ticket)
+
+    manager.remove(ticket.id)
+
+    assert manager.ids() == [other_ticket.id]
+
+
+def test_removing_nonexistent_ticket_raises_error(manager):
+    with pytest.raises(KeyError, match="a1b2c3d4"):
+        manager.remove("a1b2c3d4")
