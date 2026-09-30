@@ -1,7 +1,9 @@
 
 import pytest
 
+import ticket_manager.ticket as ticket_module
 from ticket_manager.ticket import Ticket
+from ticket_manager.ticket import _fnv1a_32
 
 
 def test_can_create_ticket():
@@ -11,6 +13,39 @@ def test_can_create_ticket():
         priority="High",
     )
     assert ticket is not None
+
+#test if the FNV-1a hash function produces the expected output for a known input
+def test_fnv1a_32_matches_known_vector():
+    assert _fnv1a_32(b"hello") == 0x4F9F2CAB
+
+
+def test_ticket_id_is_eight_lowercase_hex_characters():
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    assert len(ticket.id) == 8
+    assert ticket.id == ticket.id.lower()
+    int(ticket.id, 16)
+
+
+def test_ticket_id_uses_timestamp(monkeypatch):
+    ticket_arguments = {
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "priority": "High",
+    }
+    monkeypatch.setattr(ticket_module.time, "time_ns", lambda: 100)
+    first_id = Ticket(**ticket_arguments).id
+    expected_id = f"{_fnv1a_32(b'100:Printer broken:The office printer does not work:High'):08x}"
+
+    monkeypatch.setattr(ticket_module.time, "time_ns", lambda: 101)
+    second_id = Ticket(**ticket_arguments).id
+
+    assert first_id == expected_id
+    assert first_id != second_id
 
 def test_ticket_attributes():
     ticket = Ticket(
