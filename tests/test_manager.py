@@ -114,3 +114,27 @@ def test_can_update_ticket_fields(manager, ticket):
     assert updated.priority == "Low"
     assert updated.status == "Pending"
     assert updated.tags == {"printer", "urgent"}
+
+def test_update_only_changes_given_fields(manager, ticket):
+    manager.add(ticket)
+
+    manager.update(ticket.id, status="Closed")
+
+    updated = manager.get(ticket.id)
+    assert updated.status == "Closed"
+    assert updated.title == "Printer broken"
+    assert updated.priority == "High"
+
+
+def test_update_does_not_touch_other_tickets(manager, ticket, other_ticket):
+    manager.add(ticket)
+    manager.add(other_ticket)
+
+    manager.update(ticket.id, title="Changed")
+
+    assert manager.get(other_ticket.id).title == "Printer broken"
+
+
+def test_updating_nonexistent_ticket_raises_error(manager):
+    with pytest.raises(KeyError, match="a1b2c3d4"):
+        manager.update("a1b2c3d4", title="Whatever")
