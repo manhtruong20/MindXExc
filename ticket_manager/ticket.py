@@ -107,3 +107,7 @@ class Ticket:
             "priority": self.priority,
             "tags": set(self.tags),
         }
+
+    def update(self, **fields):
+        for name, value in fields.items():
+            setattr(self, name, value)
