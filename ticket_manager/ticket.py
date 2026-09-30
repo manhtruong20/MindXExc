@@ -82,3 +82,35 @@ class Ticket:
             allowed = ", ".join(sorted(VALID_STATUSES))
             raise ValueError(f"Status must be one of: {allowed}")
         self._status = value
+
+    @classmethod
+    def blank(cls):
+        ticket = cls.__new__(cls)
+        ticket._id = None
+        ticket._title = ""
+        ticket._description = ""
+        ticket._priority = None
+        ticket._status = "Open"
+        ticket._tags = set()
+        return ticket
+
+    @classmethod
+    def from_dict(cls, data):
+        ticket = cls.blank()
+        ticket._id = data["id"]
+        ticket.title = data["title"]
+        ticket.description = data["description"]
+        ticket.priority = data["priority"]
+        ticket.status = data["status"]
+        ticket.tags = " ".join(data.get("tags", []))
+        return ticket
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "status": self.status,
+            "priority": self.priority,
+            "tags": list(self.tags),
+        }
