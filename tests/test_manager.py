@@ -95,3 +95,22 @@ def test_removing_a_ticket_keeps_the_others(manager, ticket, other_ticket):
 def test_removing_nonexistent_ticket_raises_error(manager):
     with pytest.raises(KeyError, match="a1b2c3d4"):
         manager.remove("a1b2c3d4")
+
+def test_can_update_ticket_fields(manager, ticket):
+    manager.add(ticket)
+
+    manager.update(
+        ticket.id,
+        title="Printer jammed",
+        description="The paper tray is jammed",
+        priority="Low",
+        status="Pending",
+        tags="printer urgent",
+    )
+
+    updated = manager.get(ticket.id)
+    assert updated.title == "Printer jammed"
+    assert updated.description == "The paper tray is jammed"
+    assert updated.priority == "Low"
+    assert updated.status == "Pending"
+    assert updated.tags == {"printer", "urgent"}
