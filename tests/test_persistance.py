@@ -1,0 +1,127 @@
+import pytest
+
+from ticket_manager.ticket import Ticket
+
+def test_ticket_can_be_converted_to_dict():
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+        tags="printer office",
+    )
+
+    data = ticket.to_dict()
+
+    assert data["id"] == ticket.id
+    assert data["title"] == ticket.title
+    assert data["description"] == ticket.description
+    assert data["status"] == "Open"
+    assert data["priority"] == "High"
+    assert set(data["tags"]) == {"printer", "office"}
+
+
+def test_can_create_blank_ticket():
+    ticket = Ticket.blank()
+
+    assert isinstance(ticket, Ticket)
+
+
+def test_ticket_can_be_created_from_dict():
+    data = {
+        "id": "a1b2c3d4",
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Pending",
+        "priority": "High",
+        "tags": ["printer", "office"],
+    }
+
+    ticket = Ticket.from_dict(data)
+
+    assert ticket.id == "a1b2c3d4"
+    assert ticket.title == "Printer broken"
+    assert ticket.description == "The office printer does not work"
+    assert ticket.status == "Pending"
+    assert ticket.priority == "High"
+    assert ticket.tags == {"printer", "office"}
+
+@pytest.mark.parametrize(
+    "field, invalid_value, expected_message",
+    [
+        (
+            "priority",
+            "Invalid",
+            "Priority must be one of: Low, Medium, High",
+        ),
+        (
+            "status",
+            "Invalid",
+            "Status must be one of: Closed, Open, Pending, Resolved, Waiting",
+        ),
+        (
+            "title",
+            "",
+            "Title cannot be empty or whitespace",
+        ),
+        (
+            "title",
+            "   ",
+            "Title cannot be empty or whitespace",
+        ),
+        (
+            "title",
+            "\t\n",
+            "Title cannot be empty or whitespace",
+        ),
+        (
+            "description",
+            "",
+            "Description cannot be empty or whitespace",
+        ),
+        (
+            "description",
+            "   ",
+            "Description cannot be empty or whitespace",
+        ),
+        (
+            "description",
+            "\t\n",
+            "Description cannot be empty or whitespace",
+        ),
+    ],
+)
+def test_from_dict_rejects_invalid_field(
+    field,
+    invalid_value,
+    expected_message,
+):
+    data = {
+        "id": "a1b2c3d4",
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Open",
+        "priority": "High",
+        "tags": [],
+    }
+    data[field] = invalid_value
+
+    with pytest.raises(ValueError, match=expected_message):
+        Ticket.from_dict(data)
+
+@pytest.mark.parametrize(
+    "missing_field",
+    ["id", "title", "description", "status", "priority"],
+)
+def test_from_dict_rejects_missing_required_field(missing_field):
+    data = {
+        "id": "a1b2c3d4",
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Open",
+        "priority": "High",
+        "tags": [],
+    }
+    del data[missing_field]
+
+    with pytest.raises(KeyError):
+        Ticket.from_dict(data)
