@@ -30,3 +30,6 @@ class TicketManager:
             raise KeyError(f"No ticket with id {ticket_id}")
 
         self._tickets[ticket_id].update(**fields)
+
+    def __iter__(self):
+        return iter(list(self._tickets.values()))
