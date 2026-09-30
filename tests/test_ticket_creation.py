@@ -74,6 +74,27 @@ def test_ticket_attributes_can_be_updated():
     assert ticket.priority == "Medium"
 
 
+def test_ticket_defaults_to_empty_tags():
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    assert ticket.tags == set()
+
+
+def test_ticket_parses_whitespace_separated_tags_into_a_set():
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+        tags="tag1 tag2\ttag3 tag1",
+    )
+
+    assert ticket.tags == {"tag1", "tag2", "tag3"}
+
+
 @pytest.mark.parametrize("field", ["title", "description"])
 @pytest.mark.parametrize("invalid_value", ["", "   ", "\t\n"])
 def test_ticket_rejects_empty_or_whitespace_text(field, invalid_value):
