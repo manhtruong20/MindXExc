@@ -26,4 +26,6 @@ class Ticket:
 
     @priority.setter
     def priority(self, value):
+        if value not in ["Low", "Medium", "High"]:
+            raise ValueError("Priority must be one of: Low, Medium, High")
         self._priority = value
