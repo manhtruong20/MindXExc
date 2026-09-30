@@ -3,6 +3,24 @@ import pytest
 from ticket_manager.manager import TicketManager
 from ticket_manager.ticket import Ticket
 
+@pytest.fixture
+def manager():
+    return TicketManager()
+
+@pytest.fixture
+def ticket():
+    return Ticket.from_dict({
+        "id": "a1b2c3d4",
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Open",
+        "priority": "High",
+        "tags": [],
+    })
+
+@pytest.fixture
+def other_ticket(ticket):
+    return Ticket.from_dict({**ticket.to_dict(), "id": "deadbeef"})
 
 def test_can_create_ticket_manager():
     manager = TicketManager()
@@ -29,3 +47,18 @@ def test_cannot_add_non_ticket():
 
     with pytest.raises(TypeError):
         manager.add({"id": "fake ticket"})
+
+def test_cannot_add_ticket_with_duplicate_id(manager, ticket):
+    manager.add(ticket)
+
+    with pytest.raises(ValueError, match="a1b2c3d4"):
+        manager.add(ticket)
+
+def test_failed_duplicate_add_keeps_original_ticket(manager, ticket, other_ticket):
+    manager.add(ticket)
+    impostor = Ticket.from_dict({**other_ticket.to_dict(), "id": ticket.id})
+
+    with pytest.raises(ValueError):
+        manager.add(impostor)
+
+    assert manager.get(ticket.id) is ticket
