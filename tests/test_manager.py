@@ -138,3 +138,23 @@ def test_update_does_not_touch_other_tickets(manager, ticket, other_ticket):
 def test_updating_nonexistent_ticket_raises_error(manager):
     with pytest.raises(KeyError, match="a1b2c3d4"):
         manager.update("a1b2c3d4", title="Whatever")
+
+
+@pytest.mark.parametrize("field", ["id", "invalid_attr"])
+def test_update_rejects_unknown_or_immutable_fields(manager, ticket, field):
+    manager.add(ticket)
+
+    with pytest.raises(TypeError, match=f"'{field}'"):
+        manager.update(ticket.id, **{field: "x"})
+
+    assert manager.get(ticket.id).id == "a1b2c3d4"
+
+
+def test_update_rejects_invalid_value(manager, ticket):
+    manager.add(ticket)
+
+    with pytest.raises(ValueError, match="Priority must be one of"):
+        manager.update(ticket.id, priority="InvalidPrio")
+
+    with pytest.raises(ValueError, match="Status must be one of"):
+        manager.update(ticket.id, status="InvalidStatus")
