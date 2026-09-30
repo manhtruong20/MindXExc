@@ -74,6 +74,51 @@ def test_ticket_attributes_can_be_updated():
     assert ticket.priority == "Medium"
 
 
+def test_ticket_status_defaults_to_open():
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    assert ticket.status == "Open"
+
+
+@pytest.mark.parametrize("status", ["Open", "Pending", "Waiting", "Resolved", "Closed"])
+def test_ticket_accepts_valid_status_updates(status):
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    ticket.status = status
+
+    assert ticket.status == status
+
+
+def test_ticket_rejects_invalid_status():
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    expected_msg = "Status must be one of: Closed, Open, Pending, Resolved, Waiting"
+    with pytest.raises(ValueError, match=expected_msg):
+        ticket.status = "An Invalid Status"
+
+
+def test_ticket_status_should_not_be_set_in_constructor():
+    with pytest.raises(TypeError):
+        Ticket(
+            title="Printer broken",
+            description="The office printer does not work",
+            priority="High",
+            status="Pending",
+        )
+
+
 def test_ticket_defaults_to_empty_tags():
     ticket = Ticket(
         title="Printer broken",
