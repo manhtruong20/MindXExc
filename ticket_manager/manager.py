@@ -20,4 +20,7 @@ class TicketManager:
         return list(self._tickets.keys())
 
     def remove(self, ticket_id):
+        if ticket_id not in self._tickets:
+            raise KeyError(f"No ticket with id {ticket_id}")
+
         del self._tickets[ticket_id]
