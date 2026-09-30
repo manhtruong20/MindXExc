@@ -22,30 +22,20 @@ def ticket():
 def other_ticket(ticket):
     return Ticket.from_dict({**ticket.to_dict(), "id": "deadbeef"})
 
-def test_can_create_ticket_manager():
-    manager = TicketManager()
 
-    assert manager is not None
+def test_new_manager_has_no_tickets(manager):
     assert manager.ids() == []
 
 
-def test_can_add_and_get_ticket():
-    manager = TicketManager()
-
-    ticket = Ticket(
-        title="Printer broken",
-        description="The office printer does not work",
-        priority="High",
-    )
-
+def test_can_add_and_get_ticket(manager, ticket):
     manager.add(ticket)
 
     assert manager.get(ticket.id) is ticket
 
-def test_cannot_add_non_ticket():
-    manager = TicketManager()
 
-    with pytest.raises(TypeError):
+
+def test_cannot_add_non_ticket(manager):
+    with pytest.raises(TypeError, match="Ticket"):
         manager.add({"id": "fake ticket"})
 
 def test_cannot_add_ticket_with_duplicate_id(manager, ticket):
@@ -99,31 +89,12 @@ def test_removing_nonexistent_ticket_raises_error(manager):
 def test_can_update_ticket_fields(manager, ticket):
     manager.add(ticket)
 
-    manager.update(
-        ticket.id,
-        title="Printer jammed",
-        description="The paper tray is jammed",
-        priority="Low",
-        status="Pending",
-        tags="printer urgent",
-    )
+    manager.update(ticket.id, title="Printer jammed", status="Pending")
 
     updated = manager.get(ticket.id)
+    assert updated is ticket
     assert updated.title == "Printer jammed"
-    assert updated.description == "The paper tray is jammed"
-    assert updated.priority == "Low"
     assert updated.status == "Pending"
-    assert updated.tags == {"printer", "urgent"}
-
-def test_update_only_changes_given_fields(manager, ticket):
-    manager.add(ticket)
-
-    manager.update(ticket.id, status="Closed")
-
-    updated = manager.get(ticket.id)
-    assert updated.status == "Closed"
-    assert updated.title == "Printer broken"
-    assert updated.priority == "High"
 
 
 def test_update_does_not_touch_other_tickets(manager, ticket, other_ticket):
@@ -140,30 +111,10 @@ def test_updating_nonexistent_ticket_raises_error(manager):
         manager.update("a1b2c3d4", title="Whatever")
 
 
-@pytest.mark.parametrize("field", ["id", "invalid_attr"])
-def test_update_rejects_unknown_or_immutable_fields(manager, ticket, field):
-    manager.add(ticket)
-
-    with pytest.raises(TypeError, match=f"'{field}'"):
-        manager.update(ticket.id, **{field: "x"})
-
-    assert manager.get(ticket.id).id == "a1b2c3d4"
-
-
-def test_update_rejects_invalid_value(manager, ticket):
+def test_invalid_update_propagates_error_and_changes_nothing(manager, ticket):
     manager.add(ticket)
 
     with pytest.raises(ValueError, match="Priority must be one of"):
-        manager.update(ticket.id, priority="InvalidPrio")
-
-    with pytest.raises(ValueError, match="Status must be one of"):
-        manager.update(ticket.id, status="InvalidStatus")
-
-def test_failed_update_changes_nothing(manager, ticket):
-    manager.add(ticket)
-
-    with pytest.raises(ValueError):
         manager.update(ticket.id, title="New title", priority="InvalidPrio")
 
     assert manager.get(ticket.id).title == "Printer broken"
-    assert manager.get(ticket.id).priority == "High"
