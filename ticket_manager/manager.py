@@ -8,6 +8,9 @@ class TicketManager:
         if not isinstance(ticket, Ticket):
             raise TypeError("Expected a Ticket")
 
+        if ticket.id in self._tickets:
+            raise ValueError(f"Ticket with id {ticket.id} already exists")
+
         self._tickets[ticket.id] = ticket
 
     def get(self, ticket_id):
