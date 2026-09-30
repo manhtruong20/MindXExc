@@ -24,3 +24,9 @@ class TicketManager:
             raise KeyError(f"No ticket with id {ticket_id}")
 
         del self._tickets[ticket_id]
+
+    def update(self, ticket_id, **fields):
+        ticket = self._tickets[ticket_id]
+
+        for name, value in fields.items():
+            setattr(ticket, name, value)
