@@ -85,14 +85,7 @@ class Ticket:
 
     @classmethod
     def blank(cls):
-        ticket = cls.__new__(cls)
-        ticket._id = None
-        ticket._title = ""
-        ticket._description = ""
-        ticket._priority = None
-        ticket._status = "Open"
-        ticket._tags = set()
-        return ticket
+        return cls.__new__(cls)
 
     @classmethod
     def from_dict(cls, data):
@@ -112,5 +105,5 @@ class Ticket:
             "description": self.description,
             "status": self.status,
             "priority": self.priority,
-            "tags": list(self.tags),
+            "tags": set(self.tags),
         }
