@@ -1,5 +1,6 @@
 import time
 VALID_STATUSES = {"Open", "Pending", "Waiting", "Resolved", "Closed"}
+UPDATABLE_FIELDS = {"title", "description", "priority", "status", "tags"}
 
 def _fnv1a_32(data):
     hash_value = 0x811C9DC5
@@ -109,5 +110,17 @@ class Ticket:
         }
 
     def update(self, **fields):
+        unknown = set(fields) - UPDATABLE_FIELDS
+        if unknown:
+            names = ", ".join(repr(name) for name in sorted(unknown))
+            raise TypeError(f"Cannot update field(s): {names}")
+
+        candidate = Ticket.from_dict(self.to_dict())
         for name, value in fields.items():
-            setattr(self, name, value)
+            setattr(candidate, name, value)  # raises here, before self is touched
+
+        self._title = candidate.title
+        self._description = candidate.description
+        self._priority = candidate.priority
+        self._status = candidate.status
+        self._tags = candidate.tags
