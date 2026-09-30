@@ -1,4 +1,7 @@
 
+from ticket_manager.ticket import Ticket
+
+
 def test_can_create_ticket():
     ticket = Ticket(
         title="Printer broken",
