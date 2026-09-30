@@ -15,10 +15,11 @@ def _generate_ticket_id(title, description, priority, timestamp_ns):
 
 
 class Ticket:
-    def __init__(self, title, description, priority):
+    def __init__(self, title, description, priority, tags=""):
         self.title = title
         self.description = description
         self.priority = priority
+        self.tags = tags
         self._id = _generate_ticket_id(
             self.title,
             self.description,
@@ -29,6 +30,16 @@ class Ticket:
     @property
     def id(self):
         return self._id
+
+    @property
+    def tags(self):
+        return self._tags
+
+    @tags.setter
+    def tags(self, value):
+        if not isinstance(value, str):
+            raise TypeError("Tags must be a whitespace-separated string")
+        self._tags = set(value.split())
 
     @property
     def title(self):
