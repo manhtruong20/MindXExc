@@ -158,3 +158,12 @@ def test_update_rejects_invalid_value(manager, ticket):
 
     with pytest.raises(ValueError, match="Status must be one of"):
         manager.update(ticket.id, status="InvalidStatus")
+
+def test_failed_update_changes_nothing(manager, ticket):
+    manager.add(ticket)
+
+    with pytest.raises(ValueError):
+        manager.update(ticket.id, title="New title", priority="InvalidPrio")
+
+    assert manager.get(ticket.id).title == "Printer broken"
+    assert manager.get(ticket.id).priority == "High"
