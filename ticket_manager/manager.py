@@ -1,5 +1,4 @@
 from ticket_manager.ticket import Ticket
-UPDATABLE_FIELDS = {"title", "description", "priority", "status", "tags"}
 
 class TicketManager:
     def __init__(self):
@@ -27,12 +26,7 @@ class TicketManager:
         del self._tickets[ticket_id]
 
     def update(self, ticket_id, **fields):
-        ticket = self._tickets[ticket_id]
+        if ticket_id not in self._tickets:
+            raise KeyError(f"No ticket with id {ticket_id}")
 
-        unknown = set(fields) - UPDATABLE_FIELDS
-        if unknown:
-            names = ", ".join(repr(name) for name in sorted(unknown))
-            raise TypeError(f"Cannot update field(s): {names}")
-
-        for name, value in fields.items():
-            setattr(ticket, name, value)
+        self._tickets[ticket_id].update(**fields)
