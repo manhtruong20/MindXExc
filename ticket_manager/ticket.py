@@ -1,8 +1,34 @@
+import time
+
+
+def _fnv1a_32(data):
+    hash_value = 0x811C9DC5
+    for byte in data:
+        hash_value ^= byte
+        hash_value = (hash_value * 0x01000193) & 0xFFFFFFFF
+    return hash_value
+
+
+def _generate_ticket_id(title, description, priority, timestamp_ns):
+    payload = f"{timestamp_ns}:{title}:{description}:{priority}".encode("utf-8")
+    return f"{_fnv1a_32(payload):08x}"
+
+
 class Ticket:
     def __init__(self, title, description, priority):
         self.title = title
         self.description = description
         self.priority = priority
+        self._id = _generate_ticket_id(
+            self.title,
+            self.description,
+            self.priority,
+            time.time_ns(),
+        )
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def title(self):
