@@ -106,7 +106,7 @@ class Ticket:
             "description": self.description,
             "status": self.status,
             "priority": self.priority,
-            "tags": set(self.tags),
+            "tags": sorted(self.tags),
         }
 
     def update(self, **fields):
