@@ -1,5 +1,5 @@
 import time
-
+VALID_STATUSES = {"Open", "Pending", "Waiting", "Resolved", "Closed"}
 
 def _fnv1a_32(data):
     hash_value = 0x811C9DC5
@@ -68,7 +68,7 @@ class Ticket:
 
     @priority.setter
     def priority(self, value):
-        if value not in ["Low", "Medium", "High"]:
+        if value not in {"Low", "Medium", "High"}:
             raise ValueError("Priority must be one of: Low, Medium, High")
         self._priority = value
 
@@ -78,9 +78,7 @@ class Ticket:
 
     @status.setter
     def status(self, value):
-        valid_statuses = ["Open", "Pending", "Waiting", "Resolved", "Closed"]
-        if value not in valid_statuses:
-            raise ValueError(
-                f"Status must be one of: {', '.join(sorted(valid_statuses))}"
-            )
+        if value not in VALID_STATUSES:
+            allowed = ", ".join(sorted(VALID_STATUSES))
+            raise ValueError(f"Status must be one of: {allowed}")
         self._status = value
