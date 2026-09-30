@@ -62,3 +62,13 @@ def test_failed_duplicate_add_keeps_original_ticket(manager, ticket, other_ticke
         manager.add(impostor)
 
     assert manager.get(ticket.id) is ticket
+
+def test_get_returns_none_for_unknown_id(manager):
+    assert manager.get("does-not-exist") is None
+
+
+def test_ids_are_returned_in_insertion_order(manager, ticket, other_ticket):
+    manager.add(other_ticket)
+    manager.add(ticket)
+
+    assert manager.ids() == [other_ticket.id, ticket.id]
