@@ -10,7 +10,9 @@ class Ticket:
 
     @title.setter
     def title(self, value):
-        self._title = value
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("Title cannot be empty or whitespace")
+        self._title = value[:100]
 
     @property
     def description(self):
@@ -18,6 +20,8 @@ class Ticket:
 
     @description.setter
     def description(self, value):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError("Description cannot be empty or whitespace")
         self._description = value
 
     @property
