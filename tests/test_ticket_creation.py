@@ -38,6 +38,45 @@ def test_ticket_attributes_can_be_updated():
     assert ticket.description == "The paper tray is jammed"
     assert ticket.priority == "Medium"
 
+
+@pytest.mark.parametrize("field", ["title", "description"])
+@pytest.mark.parametrize("invalid_value", ["", "   ", "\t\n"])
+def test_ticket_rejects_empty_or_whitespace_text(field, invalid_value):
+    attributes = {
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "priority": "High",
+    }
+    attributes[field] = invalid_value
+
+    with pytest.raises(ValueError, match=f"{field.capitalize()} cannot be empty or whitespace"):
+        Ticket(**attributes)
+
+
+def test_ticket_title_is_truncated_to_100_characters():
+    long_title = "T" * 101
+
+    ticket = Ticket(
+        title=long_title,
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    assert ticket.title == long_title[:100]
+    assert len(ticket.title) == 100
+
+
+@pytest.mark.parametrize("field", ["title", "description"])
+def test_ticket_rejects_empty_text_when_updated(field):
+    ticket = Ticket(
+        title="Printer broken",
+        description="The office printer does not work",
+        priority="High",
+    )
+
+    with pytest.raises(ValueError, match=f"{field.capitalize()} cannot be empty or whitespace"):
+        setattr(ticket, field, "   ")
+
 @pytest.mark.parametrize("valid_priority", ["Low", "Medium", "High"])
 def test_ticket_enforces_priority_values(valid_priority):
     ticket = Ticket(
