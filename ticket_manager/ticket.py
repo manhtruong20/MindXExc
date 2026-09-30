@@ -19,6 +19,7 @@ class Ticket:
         self.title = title
         self.description = description
         self.priority = priority
+        self.status = "Open"
         self.tags = tags
         self._id = _generate_ticket_id(
             self.title,
@@ -70,3 +71,16 @@ class Ticket:
         if value not in ["Low", "Medium", "High"]:
             raise ValueError("Priority must be one of: Low, Medium, High")
         self._priority = value
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        valid_statuses = ["Open", "Pending", "Waiting", "Resolved", "Closed"]
+        if value not in valid_statuses:
+            raise ValueError(
+                f"Status must be one of: {', '.join(sorted(valid_statuses))}"
+            )
+        self._status = value
