@@ -3,7 +3,7 @@ import json
 import pytest
 
 from ticket_manager.manager import TicketManager
-from ticket_manager.storage import save_tickets, load_tickets
+from ticket_manager.storage import save_tickets, load_tickets, StorageError
 from ticket_manager.ticket import Ticket
 
 
@@ -41,4 +41,12 @@ def test_load_rejects_duplicate_ids(tmp_path):
     path.write_text(json.dumps([record, record]))
 
     with pytest.raises(ValueError, match="a1b2c3d4"):
+        load_tickets(path)
+
+
+def test_load_raises_storage_error_for_invalid_json(tmp_path):
+    path = tmp_path / "tickets.json"
+    path.write_text("{an invalid json")
+
+    with pytest.raises(StorageError, match="corrupted"):
         load_tickets(path)
