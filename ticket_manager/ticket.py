@@ -91,7 +91,13 @@ class Ticket:
     @classmethod
     def from_dict(cls, data):
         ticket = cls.blank()
-        ticket._id = data["id"]
+
+        #id needs check because it has no setter validation
+        ticket_id = data["id"]
+        if not isinstance(ticket_id, str) or not ticket_id.strip():
+            raise ValueError("Id cannot be empty or whitespace")
+        ticket._id = ticket_id
+
         ticket.title = data["title"]
         ticket.description = data["description"]
         ticket.priority = data["priority"]
