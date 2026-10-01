@@ -10,7 +10,7 @@ def save_tickets(manager, path):
     Path(path).write_text(json.dumps(records, indent=2))
 
 
-class StorageError(Exception):
+class StorageError(ValueError):
     pass
 
 def load_tickets(path):
@@ -30,6 +30,12 @@ def load_tickets(path):
             f"Ticket file {path} is corrupted: expected a list of tickets"
         )
 
-    for record in records:
-        manager.add(Ticket.from_dict(record))
+    for index, record in enumerate(records):
+        try:
+            manager.add(Ticket.from_dict(record))
+        except (KeyError, TypeError, ValueError) as error:
+            raise StorageError(
+                f"Ticket file {path} is corrupted: record {index}: {error!r}"
+            ) from error
+
     return manager
