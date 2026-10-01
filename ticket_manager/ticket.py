@@ -102,7 +102,15 @@ class Ticket:
         ticket.description = data["description"]
         ticket.priority = data["priority"]
         ticket.status = data["status"]
-        ticket.tags = " ".join(data.get("tags", []))
+
+        tags = data.get("tags", [])
+        if (
+            not isinstance(tags, list)
+            or not all(isinstance(tag, str) and tag and not any(c.isspace() for c in tag) for tag in tags)
+        ):
+            raise ValueError("Tags must be a list of non-empty strings without whitespace")
+        ticket.tags = " ".join(tags)
+        
         return ticket
 
     def to_dict(self):
