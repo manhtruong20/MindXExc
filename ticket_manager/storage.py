@@ -11,8 +11,13 @@ def save_tickets(manager, path):
 
 
 def load_tickets(path):
-    records = json.loads(Path(path).read_text())
+    path = Path(path)
     manager = TicketManager()
+
+    if not path.exists():
+        return manager
+
+    records = json.loads(path.read_text())
     for record in records:
         manager.add(Ticket.from_dict(record))
     return manager
