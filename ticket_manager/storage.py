@@ -10,6 +10,9 @@ def save_tickets(manager, path):
     Path(path).write_text(json.dumps(records, indent=2))
 
 
+class StorageError(Exception):
+    pass
+
 def load_tickets(path):
     path = Path(path)
     manager = TicketManager()
@@ -17,7 +20,11 @@ def load_tickets(path):
     if not path.exists():
         return manager
 
-    records = json.loads(path.read_text())
+    try:
+        records = json.loads(path.read_text())
+    except json.JSONDecodeError as error:
+        raise StorageError(f"Ticket file {path} is corrupted: {error}") from error
+
     for record in records:
         manager.add(Ticket.from_dict(record))
     return manager
