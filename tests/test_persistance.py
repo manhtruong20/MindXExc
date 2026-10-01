@@ -125,3 +125,34 @@ def test_from_dict_rejects_missing_required_field(missing_field):
 
     with pytest.raises(KeyError):
         Ticket.from_dict(data)
+
+
+REQUIRED_FIELDS = ["id", "title", "description", "status", "priority"]
+
+
+@pytest.mark.parametrize("field", REQUIRED_FIELDS)
+def test_from_dict_rejects_missing_required_field(field):
+    data = {
+        "id": "a1b2c3d4",
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Open",
+        "priority": "High",
+        "tags": [],
+    }
+    del data[field]
+
+    with pytest.raises(KeyError, match=field):
+        Ticket.from_dict(data)
+
+
+def test_from_dict_defaults_missing_tags_to_empty():
+    data = {
+        "id": "a1b2c3d4",
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Open",
+        "priority": "High",
+    }
+
+    assert Ticket.from_dict(data).tags == set()
