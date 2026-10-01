@@ -25,6 +25,11 @@ def load_tickets(path):
     except json.JSONDecodeError as error:
         raise StorageError(f"Ticket file {path} is corrupted: {error}") from error
 
+    if not isinstance(records, list):
+        raise StorageError(
+            f"Ticket file {path} is corrupted: expected a list of tickets"
+        )
+
     for record in records:
         manager.add(Ticket.from_dict(record))
     return manager
