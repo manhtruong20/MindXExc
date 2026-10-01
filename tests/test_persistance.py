@@ -156,3 +156,18 @@ def test_from_dict_defaults_missing_tags_to_empty():
     }
 
     assert Ticket.from_dict(data).tags == set()
+
+
+@pytest.mark.parametrize("bad_id", ["", "   ", 123, None])
+def test_from_dict_rejects_invalid_id(bad_id):
+    data = {
+        "id": bad_id,
+        "title": "Printer broken",
+        "description": "The office printer does not work",
+        "status": "Open",
+        "priority": "High",
+        "tags": [],
+    }
+
+    with pytest.raises(ValueError, match="Id"):
+        Ticket.from_dict(data)
