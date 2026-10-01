@@ -58,3 +58,42 @@ def test_load_rejects_file_that_is_not_a_list(tmp_path):
 
     with pytest.raises(StorageError, match="list"):
         load_tickets(path)
+
+
+VALID_RECORD = {
+    "id": "a1b2c3d4", "title": "Printer broken",
+    "description": "The office printer does not work",
+    "status": "Open", "priority": "High", "tags": ["printer"],
+}
+
+
+def write_records(tmp_path, records):
+    path = tmp_path / "tickets.json"
+    path.write_text(json.dumps(records))
+    return path
+
+
+def good_then(bad_record):
+    return [{**VALID_RECORD, "id": "deadbeef"}, bad_record]
+
+
+def test_load_wraps_error_for_record_that_is_not_an_object(tmp_path):
+    path = write_records(tmp_path, good_then(1))
+
+    with pytest.raises(StorageError, match="record 1"):
+        load_tickets(path)
+
+
+def test_load_wraps_error_for_missing_field(tmp_path):
+    bad = {k: v for k, v in VALID_RECORD.items() if k != "title"}
+    path = write_records(tmp_path, good_then(bad))
+
+    with pytest.raises(StorageError, match="record 1.*title"):
+        load_tickets(path)
+
+
+def test_load_wraps_error_for_invalid_value(tmp_path):
+    path = write_records(tmp_path, good_then({**VALID_RECORD, "priority": "Urgent"}))
+
+    with pytest.raises(StorageError, match="record 1.*Priority"):
+        load_tickets(path)
