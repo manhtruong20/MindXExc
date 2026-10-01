@@ -14,6 +14,28 @@ def _generate_ticket_id(title, description, priority, timestamp_ns):
     payload = f"{timestamp_ns}:{title}:{description}:{priority}".encode("utf-8")
     return f"{_fnv1a_32(payload):08x}"
 
+def _validate_id(ticket_id):
+    if not isinstance(ticket_id, str) or not ticket_id.strip():
+        raise ValueError("Id cannot be empty or whitespace")
+
+
+def _is_valid_tag(tag):
+    if not isinstance(tag, str):
+        return False
+    if tag == "":
+        return False
+    return not any(char.isspace() for char in tag)
+
+
+def _validate_tags(tags):
+    if not isinstance(tags, list):
+        raise ValueError("Tags must be a list")
+    for tag in tags:
+        if not _is_valid_tag(tag):
+            raise ValueError(
+                f"Tags must be non-empty strings without whitespace, got {tag!r}"
+            )
+
 
 class Ticket:
     def __init__(self, title, description, priority, tags=""):
@@ -92,11 +114,9 @@ class Ticket:
     def from_dict(cls, data):
         ticket = cls.blank()
 
-        #id needs check because it has no setter validation
-        ticket_id = data["id"]
-        if not isinstance(ticket_id, str) or not ticket_id.strip():
-            raise ValueError("Id cannot be empty or whitespace")
-        ticket._id = ticket_id
+        # id has no setter, so it is validated here
+        _validate_id(data["id"])
+        ticket._id = data["id"]
 
         ticket.title = data["title"]
         ticket.description = data["description"]
@@ -104,13 +124,9 @@ class Ticket:
         ticket.status = data["status"]
 
         tags = data.get("tags", [])
-        if (
-            not isinstance(tags, list)
-            or not all(isinstance(tag, str) and tag and not any(c.isspace() for c in tag) for tag in tags)
-        ):
-            raise ValueError("Tags must be a list of non-empty strings without whitespace")
+        _validate_tags(tags)
         ticket.tags = " ".join(tags)
-        
+
         return ticket
 
     def to_dict(self):
