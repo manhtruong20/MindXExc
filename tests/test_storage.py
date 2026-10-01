@@ -50,3 +50,11 @@ def test_load_raises_storage_error_for_invalid_json(tmp_path):
 
     with pytest.raises(StorageError, match="corrupted"):
         load_tickets(path)
+
+
+def test_load_rejects_file_that_is_not_a_list(tmp_path):
+    path = tmp_path / "tickets.json"
+    path.write_text("{}")
+
+    with pytest.raises(StorageError, match="list"):
+        load_tickets(path)
