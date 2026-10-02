@@ -77,6 +77,19 @@ def test_filter_by_tags_requires_all_of_them():
 
     assert result == [t1]
 
+
+def test_filter_with_empty_tags_returns_everything():
+    t1 = make_ticket("aaaa0001", tags=["printer"])
+    t2 = make_ticket("aaaa0002")
+
+    assert filter_tickets([t1, t2], tags=[]) == [t1, t2]
+
+
+def test_filter_with_no_match_returns_empty_list():
+    t1 = make_ticket("aaaa0001", status="Open")
+
+    assert filter_tickets([t1], status=["Closed"]) == []
+
 def test_filter_combines_status_and_priority():
     t1 = make_ticket("aaaa0001", status="Open", priority="High")
     t2 = make_ticket("aaaa0002", status="Open", priority="Low")
