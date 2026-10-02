@@ -23,6 +23,7 @@ def build_parser():
     list_command = commands.add_parser("list")
     list_command.add_argument("--status", nargs="+", choices=sorted(VALID_STATUSES))
     list_command.add_argument("--priority", nargs="+", choices=sorted(VALID_PRIORITIES))
+    list_command.add_argument("--tags", nargs="+")
 
     return parser
 
@@ -96,7 +97,12 @@ def load_existing_tickets(path):
 
 def list_tickets(args):
     manager = load_existing_tickets(args.file)
-    tickets = filter_tickets(manager, status=args.status, priority=args.priority)
+    tickets = filter_tickets(
+        manager,
+        status=args.status,
+        priority=args.priority,
+        tags=args.tags,
+    )
 
     if not tickets:
         print("No tickets found")
