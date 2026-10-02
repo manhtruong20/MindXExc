@@ -85,9 +85,21 @@ def show_ticket(args):
     return 0
 
 
+def load_existing_tickets(path):
+    if not Path(path).exists():
+        raise StorageError(f"Ticket file {path} not found")
+    return load_tickets(path)
+
+
 def list_tickets(args):
-    manager = load_tickets(args.file)
-    for ticket in filter_tickets(manager, status=args.status, priority=args.priority):
+    manager = load_existing_tickets(args.file)
+    tickets = filter_tickets(manager, status=args.status, priority=args.priority)
+
+    if not tickets:
+        print("No tickets found")
+        return 0
+
+    for ticket in tickets:
         print(f"{ticket.id}  {ticket.status:<9} {ticket.priority:<6} {ticket.title}")
     return 0
 
