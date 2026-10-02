@@ -65,23 +65,26 @@ def create_ticket(args):
     return 0
 
 
-def show_ticket(args):
-    if not Path(args.file).exists():
-        print(f"Ticket file {args.file} not found", file=sys.stderr)
-        return 1
+def format_ticket(ticket):
+    return "\n".join([
+        f"ID:          {ticket.id}",
+        f"Title:       {ticket.title}",
+        f"Description: {ticket.description}",
+        f"Status:      {ticket.status}",
+        f"Priority:    {ticket.priority}",
+        f"Tags:        {', '.join(sorted(ticket.tags))}",
+    ])
 
-    manager = load_tickets(args.file)
+
+def show_ticket(args):
+    manager = load_existing_tickets(args.file)
+
     ticket = manager.get(args.id)
     if ticket is None:
         print(f"Ticket {args.id} not found", file=sys.stderr)
         return 1
 
-    print(f"ID:          {ticket.id}")
-    print(f"Title:       {ticket.title}")
-    print(f"Description: {ticket.description}")
-    print(f"Status:      {ticket.status}")
-    print(f"Priority:    {ticket.priority}")
-    print(f"Tags:        {', '.join(sorted(ticket.tags))}")
+    print(format_ticket(ticket))
     return 0
 
 
