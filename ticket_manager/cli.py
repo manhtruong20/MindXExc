@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from ticket_manager.storage import load_tickets, save_tickets
+from ticket_manager.storage import StorageError, load_tickets, save_tickets
 from ticket_manager.ticket import Ticket
 
 
@@ -90,4 +90,7 @@ def main(argv=None):
         return show_ticket(args)
     except EOFError:
         print("Missing arguments and cannot ask for them: no input available", file=sys.stderr)
+        return 1
+    except StorageError as error:
+        print(error, file=sys.stderr)
         return 1
