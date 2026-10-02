@@ -159,3 +159,15 @@ def test_show_unknown_id_reports_error(tmp_path, capsys):
     assert code == 1
     assert "deadbeef" in captured.err
     assert "not found" in captured.err
+
+
+def test_corrupted_file_reports_error_and_is_left_untouched(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    path.write_text("{an invalid json")
+
+    code = main(["--file", str(path), "show", "a1b2c3d4"])
+
+    captured = capsys.readouterr()
+    assert code == 1
+    assert "corrupted" in captured.err
+    assert path.read_text() == "{an invalid json"
