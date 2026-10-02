@@ -160,3 +160,21 @@ def test_list_sort_flag_needs_at_least_one_value(tmp_path, capsys):
 
     assert exit_info.value.code == 2
     assert "expected at least one argument" in capsys.readouterr().err
+
+
+def test_list_sorts_by_status_in_workflow_order(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", status="Closed"),
+        make_ticket("aaaa0002", status="Open"),
+        make_ticket("aaaa0003", status="Waiting"),
+        make_ticket("aaaa0004", status="Pending"),
+        make_ticket("aaaa0005", status="Resolved"),
+    )
+
+    main(["--file", str(path), "list", "--sort", "status"])
+
+    assert printed_ids(capsys) == [
+        "aaaa0002", "aaaa0004", "aaaa0003", "aaaa0005", "aaaa0001",
+    ]
