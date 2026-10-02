@@ -198,3 +198,67 @@ def test_list_second_sort_rule_breaks_ties_of_the_first(tmp_path, capsys):
 
     assert by_priority_first == ["aaaa0003", "aaaa0001", "aaaa0002", "aaaa0004"]
     assert by_status_first == ["aaaa0003", "aaaa0002", "aaaa0001", "aaaa0004"]
+
+
+def test_list_sorttag_puts_most_matching_tags_first(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", tags=["printer"]),
+        make_ticket("aaaa0002", tags=["printer", "office"]),
+        make_ticket("aaaa0003"),
+        make_ticket("aaaa0004", tags=["printer"]),
+    )
+
+    main(["--file", str(path), "list", "--sorttag", "printer", "office"])
+
+    assert printed_ids(capsys) == ["aaaa0002", "aaaa0001", "aaaa0004", "aaaa0003"]
+
+
+def test_list_sorttag_accepts_tag_named_like_a_rule(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001"),
+        make_ticket("aaaa0002", tags=["priority"]),
+    )
+
+    main(["--file", str(path), "list", "--sorttag", "priority"])
+
+    assert printed_ids(capsys) == ["aaaa0002", "aaaa0001"]
+
+
+def test_list_sort_rules_apply_in_command_line_order(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", priority="Low", tags=["printer"]),
+        make_ticket("aaaa0002", priority="High"),
+        make_ticket("aaaa0003", priority="High", tags=["printer"]),
+    )
+
+    main(["--file", str(path), "list", "--sort", "priority", "--sorttag", "printer"])
+    priority_first = printed_ids(capsys)
+    main(["--file", str(path), "list", "--sorttag", "printer", "--sort", "priority"])
+    tag_first = printed_ids(capsys)
+
+    assert priority_first == ["aaaa0003", "aaaa0002", "aaaa0001"]
+    assert tag_first == ["aaaa0003", "aaaa0001", "aaaa0002"]
+
+
+def test_list_sorttag_can_repeat_and_the_first_is_primary(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", tags=["b"]),
+        make_ticket("aaaa0002", tags=["a"]),
+        make_ticket("aaaa0003", tags=["a", "b"]),
+    )
+
+    main(["--file", str(path), "list", "--sorttag", "a", "--sorttag", "b"])
+    a_first = printed_ids(capsys)
+    main(["--file", str(path), "list", "--sorttag", "b", "--sorttag", "a"])
+    b_first = printed_ids(capsys)
+
+    assert a_first == ["aaaa0003", "aaaa0002", "aaaa0001"]
+    assert b_first == ["aaaa0003", "aaaa0001", "aaaa0002"]
