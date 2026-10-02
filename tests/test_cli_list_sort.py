@@ -262,3 +262,11 @@ def test_list_sorttag_can_repeat_and_the_first_is_primary(tmp_path, capsys):
 
     assert a_first == ["aaaa0003", "aaaa0002", "aaaa0001"]
     assert b_first == ["aaaa0003", "aaaa0001", "aaaa0002"]
+
+
+def test_list_sorttag_needs_at_least_one_tag(tmp_path, capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--file", str(tmp_path / "t.json"), "list", "--sorttag"])
+
+    assert exit_info.value.code == 2
+    assert "expected at least one argument" in capsys.readouterr().err
