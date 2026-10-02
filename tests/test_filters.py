@@ -1,3 +1,5 @@
+import pytest
+
 from ticket_manager.filters import filter_tickets
 from ticket_manager.ticket import Ticket
 
@@ -18,7 +20,7 @@ def test_filter_by_status():
     t2 = make_ticket("aaaa0002", status="Closed")
     t3 = make_ticket("aaaa0003", status="Open")
 
-    result = filter_tickets([t1, t2, t3], status="Open")
+    result = filter_tickets([t1, t2, t3], status=["Open"])
 
     assert result == [t1, t3]
 
@@ -89,6 +91,12 @@ def test_filter_with_no_match_returns_empty_list():
     t1 = make_ticket("aaaa0001", status="Open")
 
     assert filter_tickets([t1], status=["Closed"]) == []
+
+
+@pytest.mark.parametrize("argument", ["status", "priority", "tags"])
+def test_filter_rejects_a_plain_string(argument):
+    with pytest.raises(TypeError, match=argument):
+        filter_tickets([], **{argument: "Open"})
 
 def test_filter_combines_status_and_priority():
     t1 = make_ticket("aaaa0001", status="Open", priority="High")
