@@ -109,6 +109,22 @@ def load_existing_tickets(path):
 
 
 def list_tickets(args):
+    """Print the tickets in the file, filtered and sorted, one per line.
+
+    Steps, in this order:
+      1. Load the file. A missing or corrupted file raises StorageError,
+         which main() turns into a message on stderr and exit code 1.
+      2. Filter: keep tickets matching ALL the given filters.
+         --status / --priority match ANY of their values,
+         --tags requires ALL of its values. A filter left out is skipped.
+      3. Sort: args.sort is a list of (key, reverse) rules built from
+         --sort and --sorttag in command-line order. The first rule is
+         the primary one, and each later rule only breaks ties.
+      4. Print one line per ticket (id, status, priority, title),
+         or "No tickets found" if nothing is left.
+
+    Never writes the file. Returns 0, including when nothing matches.
+    """
     manager = load_existing_tickets(args.file)
     tickets = filter_tickets(
         manager,
