@@ -33,3 +33,6 @@ class TicketManager:
 
     def __iter__(self):
         return iter(list(self._tickets.values()))
+
+    def groups(self):
+        return [list(self)]
