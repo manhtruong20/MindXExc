@@ -26,13 +26,28 @@ def build_parser():
 def ask(value, prompt):
     return value if value is not None else input(prompt)
 
+def _check(field, value):
+    Ticket("title", "description", "Low").update(**{field: value})
+
+
+def ask_valid(field, value, prompt):
+    while True:
+        if value is None:
+            value = input(prompt)
+        try:
+            _check(field, value)
+            return value
+        except ValueError as error:
+            print(f"Invalid {field}: {error}", file=sys.stderr)
+            value = None
+
 
 def create_ticket(args):
     manager = load_tickets(args.file)
 
-    title = ask(args.title, "Title: ")
-    description = ask(args.description, "Description: ")
-    priority = ask(args.priority, "Priority (Low/Medium/High): ")
+    title = ask_valid("title", args.title, "Title: ")
+    description = ask_valid("description", args.description, "Description: ")
+    priority = ask_valid("priority", args.priority, "Priority (Low/Medium/High): ")
     tags = ask(
         " ".join(args.tags) if args.tags is not None else None,
         "Tags (space separated, optional): ",
