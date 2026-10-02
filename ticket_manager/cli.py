@@ -20,6 +20,8 @@ def build_parser():
     show = commands.add_parser("show")
     show.add_argument("id")
 
+    commands.add_parser("list")
+
     return parser
 
 
@@ -81,13 +83,27 @@ def show_ticket(args):
     return 0
 
 
+def list_tickets(args):
+    manager = load_tickets(args.file)
+    for ticket in manager:
+        print(f"{ticket.id}  {ticket.status:<9} {ticket.priority:<6} {ticket.title}")
+    return 0
+
+
+COMMANDS = {
+    "create": create_ticket,
+    "show": show_ticket,
+    "list": list_tickets,
+}
+
+
 def main(argv=None):
     args = build_parser().parse_args(argv)
 
     try:
         if args.command == "create":
             return create_ticket(args)
-        return show_ticket(args)
+        return COMMANDS[args.command](args)
     except EOFError:
         print("Missing arguments and cannot ask for them: no input available", file=sys.stderr)
         return 1
