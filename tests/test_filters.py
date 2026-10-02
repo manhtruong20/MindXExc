@@ -58,3 +58,13 @@ def test_filter_by_priority():
     result = filter_tickets([t1, t2, t3], priority=["High"])
 
     assert result == [t1, t3]
+
+
+def test_filter_combines_status_and_priority():
+    t1 = make_ticket("aaaa0001", status="Open", priority="High")
+    t2 = make_ticket("aaaa0002", status="Open", priority="Low")
+    t3 = make_ticket("aaaa0003", status="Closed", priority="High")
+
+    result = filter_tickets([t1, t2, t3], status=["Open"], priority=["High"])
+
+    assert result == [t1]
