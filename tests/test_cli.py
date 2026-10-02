@@ -7,6 +7,14 @@ def blank_answers_by_default(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda prompt="": "")
 
 
+def create_via_cli(path, title, capsys):
+    main(["--file", str(path), "create",
+          "--title", title,
+          "--description", "Some description",
+          "--priority", "High"])
+    return capsys.readouterr().out.strip()
+
+
 def test_show_on_missing_file_reports_error(tmp_path, capsys):
     path = tmp_path / "tickets.json"
 
@@ -171,3 +179,17 @@ def test_corrupted_file_reports_error_and_is_left_untouched(tmp_path, capsys):
     assert code == 1
     assert "corrupted" in captured.err
     assert path.read_text() == "{an invalid json"
+
+
+def test_list_prints_all_tickets_in_insertion_order(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    first = create_via_cli(path, "Printer broken", capsys)
+    second = create_via_cli(path, "Monitor flickers", capsys)
+
+    code = main(["--file", str(path), "list"])
+
+    lines = capsys.readouterr().out.strip().splitlines()
+    assert code == 0
+    assert len(lines) == 2
+    assert first in lines[0] and "Printer broken" in lines[0]
+    assert second in lines[1] and "Monitor flickers" in lines[1]
