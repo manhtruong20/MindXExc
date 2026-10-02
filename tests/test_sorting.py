@@ -1,4 +1,4 @@
-from ticket_manager.sorting import sort_groups, tag_match_count
+from ticket_manager.sorting import sort_groups, tag_match_count, priority_rank
 from ticket_manager.ticket import Ticket
 
 
@@ -65,3 +65,11 @@ def test_tag_match_count_ranks_tickets_by_matching_tags():
     )
 
     assert result == [[t2], [t1, t4], [t3]]
+
+
+def test_priority_rank_orders_low_below_medium_below_high():
+    low = make_ticket("aaaa0001", "Low")
+    medium = make_ticket("aaaa0002", "Medium")
+    high = make_ticket("aaaa0003", "High")
+
+    assert priority_rank(low) < priority_rank(medium) < priority_rank(high)
