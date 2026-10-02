@@ -12,9 +12,10 @@ def build_parser():
     commands = parser.add_subparsers(dest="command", required=True)
 
     create = commands.add_parser("create")
-    create.add_argument("--title", required=True)
-    create.add_argument("--description", required=True)
-    create.add_argument("--priority", required=True)
+    create.add_argument("--title")
+    create.add_argument("--description")
+    create.add_argument("--priority")
+    create.add_argument("--tags", nargs="*")
 
     show = commands.add_parser("show")
     show.add_argument("id")
@@ -22,9 +23,22 @@ def build_parser():
     return parser
 
 
+def ask(value, prompt):
+    return value if value is not None else input(prompt)
+
+
 def create_ticket(args):
     manager = load_tickets(args.file)
-    ticket = Ticket(args.title, args.description, args.priority)
+
+    title = ask(args.title, "Title: ")
+    description = ask(args.description, "Description: ")
+    priority = ask(args.priority, "Priority (Low/Medium/High): ")
+    tags = ask(
+        " ".join(args.tags) if args.tags is not None else None,
+        "Tags (space separated, optional): ",
+    )
+
+    ticket = Ticket(title, description, priority, tags)
     manager.add(ticket)
     save_tickets(manager, args.file)
 
