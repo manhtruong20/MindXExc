@@ -1,6 +1,7 @@
 from ticket_manager.sorting import sort_groups, tag_match_count, priority_rank
 from ticket_manager.ticket import Ticket
-
+from ticket_manager.sorting import PRIORITY_RANK
+from ticket_manager.ticket import VALID_PRIORITIES
 
 def make_ticket(ticket_id, priority="High", status="Open", tags=()):
     return Ticket.from_dict({
@@ -73,3 +74,6 @@ def test_priority_rank_orders_low_below_medium_below_high():
     high = make_ticket("aaaa0003", "High")
 
     assert priority_rank(low) < priority_rank(medium) < priority_rank(high)
+
+def test_every_valid_priority_has_a_rank():
+    assert set(PRIORITY_RANK) == set(VALID_PRIORITIES)
