@@ -1,14 +1,12 @@
 from ticket_manager.ticket import VALID_STATUSES
-
-
-PRIORITY_RANK = {"Low": 0, "Medium": 1, "High": 2}
+from ticket_manager.ticket import VALID_PRIORITIES
 
 def tag_match_count(include):
     include = set(include)
     return lambda ticket: len(ticket.tags & include)
 
 def priority_rank(ticket):
-    return PRIORITY_RANK[ticket.priority]
+    return VALID_PRIORITIES.index(ticket.priority)
 
 def status_rank(ticket):
     return VALID_STATUSES.index(ticket.status)

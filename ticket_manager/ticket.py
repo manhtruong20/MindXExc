@@ -1,7 +1,7 @@
 import time
 VALID_STATUSES = ("Open", "Pending", "Waiting", "Resolved", "Closed")
 UPDATABLE_FIELDS = {"title", "description", "priority", "status", "tags"}
-VALID_PRIORITIES = {"Low", "Medium", "High"}
+VALID_PRIORITIES = ("Low", "Medium", "High")
 
 def _fnv1a_32(data):
     hash_value = 0x811C9DC5
