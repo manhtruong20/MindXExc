@@ -193,3 +193,39 @@ def test_list_prints_all_tickets_in_insertion_order(tmp_path, capsys):
     assert len(lines) == 2
     assert first in lines[0] and "Printer broken" in lines[0]
     assert second in lines[1] and "Monitor flickers" in lines[1]
+
+
+def test_create_asks_again_when_tags_are_invalid(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "tickets.json"
+    answers = iter(["-urgent", "urgent"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+
+    code = main([
+        "--file", str(path), "create",
+        "--title", "Printer broken",
+        "--description", "The office printer does not work",
+        "--priority", "High",
+    ])
+
+    captured = capsys.readouterr()
+    ticket = load_tickets(path).get(captured.out.strip())
+    assert code == 0
+    assert ticket.tags == {"urgent"}
+    assert "Invalid tags" in captured.err
+
+
+def test_create_asks_again_when_a_dash_tag_is_given_with_equals(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "tickets.json"
+    answers = iter(["urgent"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+
+    main([
+        "--file", str(path), "create",
+        "--title", "Printer broken",
+        "--description", "The office printer does not work",
+        "--priority", "High",
+        "--tags=-urgent",
+    ])
+
+    ticket = load_tickets(path).get(capsys.readouterr().out.strip())
+    assert ticket.tags == {"urgent"}
