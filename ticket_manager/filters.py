@@ -9,4 +9,8 @@ def _matches(ticket, status, priority, tags):
 
 
 def filter_tickets(tickets, status=None, priority=None, tags=None):
+    for name, value in (("status", status), ("priority", priority), ("tags", tags)):
+        if isinstance(value, str):
+            raise TypeError(f"{name} must be a list of strings, not a single string")
+
     return [t for t in tickets if _matches(t, status, priority, tags)]
