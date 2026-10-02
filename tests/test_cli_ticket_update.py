@@ -78,3 +78,33 @@ def test_update_on_corrupted_file_reports_error_and_keeps_file(tmp_path, capsys)
     assert code == 1
     assert "corrupted" in capsys.readouterr().err
     assert path.read_text() == "{not valid json"
+
+
+def test_update_changes_only_the_status(tmp_path):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", priority="Low", tags=["printer", "office"]),
+        make_ticket("aaaa0002"),
+    )
+
+    main(["--file", str(path), "update", "aaaa0001", "Resolved"])
+
+    manager = load_tickets(path)
+    updated = manager.get("aaaa0001").to_dict()
+    assert updated["status"] == "Resolved"
+    assert updated == {**make_ticket(
+        "aaaa0001", status="Resolved", priority="Low", tags=["printer", "office"]
+    ).to_dict()}
+    assert manager.ids() == ["aaaa0001", "aaaa0002"]
+
+
+def test_update_to_the_same_status_succeeds(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(path, make_ticket("aaaa0001", status="Open"))
+
+    code = main(["--file", str(path), "update", "aaaa0001", "Open"])
+
+    assert code == 0
+    assert load_tickets(path).get("aaaa0001").status == "Open"
+    assert "Open" in capsys.readouterr().out
