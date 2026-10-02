@@ -43,9 +43,6 @@ def build_parser():
     return parser
 
 
-def ask(value, prompt):
-    return value if value is not None else input(prompt)
-
 def _check(field, value):
     Ticket("title", "description", "Low").update(**{field: value})
 
@@ -68,7 +65,8 @@ def create_ticket(args):
     title = ask_valid("title", args.title, "Title: ")
     description = ask_valid("description", args.description, "Description: ")
     priority = ask_valid("priority", args.priority, "Priority (Low/Medium/High): ")
-    tags = ask(
+    tags = ask_valid(
+        "tags",
         " ".join(args.tags) if args.tags is not None else None,
         "Tags (space separated, optional): ",
     )
