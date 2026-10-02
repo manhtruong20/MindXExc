@@ -154,3 +154,30 @@ def test_list_filters_by_tags_requiring_all_of_them(tmp_path, capsys):
 
     assert code == 0
     assert printed_ids(capsys) == ["aaaa0001", "aaaa0003"]
+
+
+def test_list_with_unknown_tag_says_nothing_matches(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(path, make_ticket("aaaa0001", tags=["printer"]))
+
+    code = main(["--file", str(path), "list", "--tags", "nonexistent"])
+
+    assert code == 0
+    assert capsys.readouterr().out.strip() == "No tickets found"
+
+
+def test_list_tags_flag_needs_at_least_one_value(tmp_path, capsys):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--file", str(tmp_path / "t.json"), "list", "--tags"])
+
+    assert exit_info.value.code == 2
+    assert "expected at least one argument" in capsys.readouterr().err
+
+
+def test_list_tags_are_case_sensitive(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(path, make_ticket("aaaa0001", tags=["printer"]))
+
+    main(["--file", str(path), "list", "--tags", "Printer"])
+
+    assert capsys.readouterr().out.strip() == "No tickets found"
