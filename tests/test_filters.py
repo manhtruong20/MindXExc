@@ -98,11 +98,19 @@ def test_filter_rejects_a_plain_string(argument):
     with pytest.raises(TypeError, match=argument):
         filter_tickets([], **{argument: "Open"})
 
-def test_filter_combines_status_and_priority():
-    t1 = make_ticket("aaaa0001", status="Open", priority="High")
-    t2 = make_ticket("aaaa0002", status="Open", priority="Low")
-    t3 = make_ticket("aaaa0003", status="Closed", priority="High")
+def test_filter_combine():
+    matches_open = make_ticket("aaaa0001", "Open", "High", ["printer", "office"])
+    matches_pending = make_ticket("aaaa0002", "Pending", "High", ["printer", "office", "urgent"])
+    wrong_status = make_ticket("aaaa0003", "Closed", "High", ["printer", "office"])
+    wrong_priority = make_ticket("aaaa0004", "Open", "Low", ["printer", "office"])
+    missing_a_tag = make_ticket("aaaa0005", "Open", "High", ["printer"])
+    no_tags = make_ticket("aaaa0006", "Open", "High", [])
 
-    result = filter_tickets([t1, t2, t3], status=["Open"], priority=["High"])
+    result = filter_tickets(
+        [matches_open, matches_pending, wrong_status, wrong_priority, missing_a_tag, no_tags],
+        status=["Open", "Pending"],
+        priority=["High"],
+        tags=["printer", "office"],
+    )
 
-    assert result == [t1]
+    assert result == [matches_open, matches_pending]
