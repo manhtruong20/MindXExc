@@ -22,3 +22,7 @@ def test_sort_splits_one_group_into_ordered_groups():
     result = sort_groups([[t1, t2, t3]], key=lambda t: rank[t.priority])
 
     assert result == [[t2], [t1, t3]]
+
+
+def test_sort_keeps_empty_group():
+    assert sort_groups([[]], key=lambda t: t.priority) == [[]]
