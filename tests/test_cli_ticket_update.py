@@ -56,3 +56,25 @@ def test_update_unknown_id_reports_error_and_keeps_file(tmp_path, capsys):
     assert "not found" in captured.err
     assert captured.out == ""
     assert path.read_text() == before
+
+
+def test_update_on_missing_file_reports_error_and_creates_nothing(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+
+    code = main(["--file", str(path), "update", "aaaa0001", "Closed"])
+
+    captured = capsys.readouterr()
+    assert code == 1
+    assert "not found" in captured.err
+    assert not path.exists()
+
+
+def test_update_on_corrupted_file_reports_error_and_keeps_file(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    path.write_text("{not valid json")
+
+    code = main(["--file", str(path), "update", "aaaa0001", "Closed"])
+
+    assert code == 1
+    assert "corrupted" in capsys.readouterr().err
+    assert path.read_text() == "{not valid json"
