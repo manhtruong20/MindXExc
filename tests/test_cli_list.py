@@ -138,3 +138,19 @@ def test_list_says_when_nothing_matches(tmp_path, capsys, tickets, extra_args):
 
     assert code == 0
     assert capsys.readouterr().out.strip() == "No tickets found"
+
+
+def test_list_filters_by_tags_requiring_all_of_them(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", tags=["printer", "office"]),
+        make_ticket("aaaa0002", tags=["printer"]),
+        make_ticket("aaaa0003", tags=["printer", "office", "urgent"]),
+        make_ticket("aaaa0004"),
+    )
+
+    code = main(["--file", str(path), "list", "--tags", "printer", "office"])
+
+    assert code == 0
+    assert printed_ids(capsys) == ["aaaa0001", "aaaa0003"]
