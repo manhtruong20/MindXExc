@@ -25,6 +25,8 @@ def _is_valid_tag(tag):
         return False
     if tag == "":
         return False
+    if tag.startswith("-"):
+        return False
     return not any(char.isspace() for char in tag)
 
 
@@ -34,9 +36,9 @@ def _validate_tags(tags):
     for tag in tags:
         if not _is_valid_tag(tag):
             raise ValueError(
-                f"Tags must be non-empty strings without whitespace, got {tag!r}"
+                "Tags must be non-empty strings without whitespace "
+                f"and not starting with '-', got {tag!r}"
             )
-
 
 class Ticket:
     def __init__(self, title, description, priority, tags=""):
@@ -64,7 +66,9 @@ class Ticket:
     def tags(self, value):
         if not isinstance(value, str):
             raise TypeError("Tags must be a whitespace-separated string")
-        self._tags = set(value.split())
+        tags = value.split()
+        _validate_tags(tags)
+        self._tags = set(tags)
 
     @property
     def title(self):
