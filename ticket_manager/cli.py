@@ -81,6 +81,10 @@ def show_ticket(args):
 def main(argv=None):
     args = build_parser().parse_args(argv)
 
-    if args.command == "create":
-        return create_ticket(args)
-    return show_ticket(args)
+    try:
+        if args.command == "create":
+            return create_ticket(args)
+        return show_ticket(args)
+    except EOFError:
+        print("Missing arguments and cannot ask for them: no input available", file=sys.stderr)
+        return 1
