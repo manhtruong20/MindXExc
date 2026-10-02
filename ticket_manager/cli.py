@@ -94,12 +94,17 @@ def format_ticket(ticket):
     ])
 
 
+def find_ticket(manager, ticket_id):
+    ticket = manager.get(ticket_id)
+    if ticket is None:
+        print(f"Ticket {ticket_id} not found", file=sys.stderr)
+    return ticket
+
 def show_ticket(args):
     manager = load_existing_tickets(args.file)
 
-    ticket = manager.get(args.id)
+    ticket = find_ticket(manager, args.id)
     if ticket is None:
-        print(f"Ticket {args.id} not found", file=sys.stderr)
         return 1
 
     print(format_ticket(ticket))
@@ -150,8 +155,7 @@ def list_tickets(args):
 def update_ticket(args):
     manager = load_existing_tickets(args.file)
 
-    if manager.get(args.id) is None:
-        print(f"Ticket {args.id} not found", file=sys.stderr)
+    if find_ticket(manager, args.id) is None:
         return 1
 
     manager.update(args.id, status=args.status)
