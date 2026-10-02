@@ -20,3 +20,6 @@ def sort_groups(groups, key, reverse=False):
         for bucket_key in sorted(buckets, reverse=reverse):
             result.append(buckets[bucket_key])
     return result
+
+def flatten(groups):
+       return [ticket for group in groups for ticket in group]

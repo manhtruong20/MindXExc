@@ -124,8 +124,6 @@ def main(argv=None):
     args = build_parser().parse_args(argv)
 
     try:
-        if args.command == "create":
-            return create_ticket(args)
         return COMMANDS[args.command](args)
     except EOFError:
         print("Missing arguments and cannot ask for them: no input available", file=sys.stderr)
