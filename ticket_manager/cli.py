@@ -5,6 +5,11 @@ from pathlib import Path
 from ticket_manager.storage import StorageError, load_tickets, save_tickets
 from ticket_manager.ticket import Ticket, VALID_STATUSES, VALID_PRIORITIES
 from ticket_manager.filters import filter_tickets
+from ticket_manager.sorting import flatten, priority_rank, sort_groups
+
+SORT_RULES = {
+    "priority": (priority_rank, True),
+}
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="tickets")
@@ -24,6 +29,7 @@ def build_parser():
     list_command.add_argument("--status", nargs="+", choices=sorted(VALID_STATUSES))
     list_command.add_argument("--priority", nargs="+", choices=sorted(VALID_PRIORITIES))
     list_command.add_argument("--tags", nargs="+")
+    list_command.add_argument("--sort", nargs="+", choices=list(SORT_RULES))
 
     return parser
 
@@ -103,6 +109,7 @@ def list_tickets(args):
         priority=args.priority,
         tags=args.tags,
     )
+    tickets = sort_tickets(tickets, args.sort)
 
     if not tickets:
         print("No tickets found")
@@ -118,6 +125,13 @@ COMMANDS = {
     "show": show_ticket,
     "list": list_tickets,
 }
+
+def sort_tickets(tickets, rule_names):
+    groups = [tickets]
+    for name in rule_names or []:
+        key, reverse = SORT_RULES[name]
+        groups = sort_groups(groups, key=key, reverse=reverse)
+    return flatten(groups)
 
 
 def main(argv=None):
