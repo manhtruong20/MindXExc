@@ -68,6 +68,9 @@ def show_ticket(args):
 
     manager = load_tickets(args.file)
     ticket = manager.get(args.id)
+    if ticket is None:
+        print(f"Ticket {args.id} not found", file=sys.stderr)
+        return 1
 
     print(f"ID:          {ticket.id}")
     print(f"Title:       {ticket.title}")
