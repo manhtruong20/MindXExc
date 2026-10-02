@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from ticket_manager.storage import StorageError, load_tickets, save_tickets
-from ticket_manager.ticket import Ticket, VALID_STATUSES
+from ticket_manager.ticket import Ticket, VALID_STATUSES, VALID_PRIORITIES
 from ticket_manager.filters import filter_tickets
 
 def build_parser():
@@ -22,6 +22,7 @@ def build_parser():
 
     list_command = commands.add_parser("list")
     list_command.add_argument("--status", nargs="+", choices=sorted(VALID_STATUSES))
+    list_command.add_argument("--priority", nargs="+", choices=sorted(VALID_PRIORITIES))
 
     return parser
 
@@ -86,7 +87,7 @@ def show_ticket(args):
 
 def list_tickets(args):
     manager = load_tickets(args.file)
-    for ticket in filter_tickets(manager, status=args.status):
+    for ticket in filter_tickets(manager, status=args.status, priority=args.priority):
         print(f"{ticket.id}  {ticket.status:<9} {ticket.priority:<6} {ticket.title}")
     return 0
 
