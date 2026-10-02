@@ -127,3 +127,19 @@ def test_create_asks_again_when_a_given_argument_is_invalid(tmp_path, capsys, mo
     ticket = load_tickets(path).get(capsys.readouterr().out.strip())
     assert code == 0
     assert ticket.priority == "High"
+
+
+def test_create_reports_error_when_it_cannot_prompt(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "tickets.json"
+
+    def no_input(prompt=""):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", no_input)
+
+    code = main(["--file", str(path), "create", "--title", "Printer broken"])
+
+    captured = capsys.readouterr()
+    assert code == 1
+    assert "cannot ask" in captured.err
+    assert not path.exists()
