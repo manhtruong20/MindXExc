@@ -1,3 +1,6 @@
+from ticket_manager.ticket import VALID_STATUSES
+
+
 PRIORITY_RANK = {"Low": 0, "Medium": 1, "High": 2}
 
 def tag_match_count(include):
@@ -6,6 +9,9 @@ def tag_match_count(include):
 
 def priority_rank(ticket):
     return PRIORITY_RANK[ticket.priority]
+
+def status_rank(ticket):
+    return VALID_STATUSES.index(ticket.status)
 
 def sort_groups(groups, key, reverse=False):
     result = []

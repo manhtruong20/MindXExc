@@ -5,10 +5,12 @@ from pathlib import Path
 from ticket_manager.storage import StorageError, load_tickets, save_tickets
 from ticket_manager.ticket import Ticket, VALID_STATUSES, VALID_PRIORITIES
 from ticket_manager.filters import filter_tickets
-from ticket_manager.sorting import flatten, priority_rank, sort_groups
+from ticket_manager.sorting import flatten, priority_rank, sort_groups, status_rank
+
 
 SORT_RULES = {
     "priority": (priority_rank, True),
+    "status": (status_rank, False),
 }
 
 def build_parser():
