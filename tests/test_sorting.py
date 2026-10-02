@@ -39,3 +39,14 @@ def test_second_rule_splits_inside_groups_without_mixing_them():
     by_status = sort_groups(by_priority, key=lambda t: t.status)
 
     assert by_status == [[t2], [t4], [t3], [t1]]
+
+
+def test_reverse_orders_buckets_descending_and_keeps_insertion_order_in_ties():
+    t1 = make_ticket("aaaa0001", "Low")
+    t2 = make_ticket("aaaa0002", "High")
+    t3 = make_ticket("aaaa0003", "Low")
+    rank = {"Low": 0, "Medium": 1, "High": 2}
+
+    result = sort_groups([[t1, t2, t3]], key=lambda t: rank[t.priority], reverse=True)
+
+    assert result == [[t2], [t1, t3]]
