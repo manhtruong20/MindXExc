@@ -1,6 +1,7 @@
 import time
 VALID_STATUSES = {"Open", "Pending", "Waiting", "Resolved", "Closed"}
 UPDATABLE_FIELDS = {"title", "description", "priority", "status", "tags"}
+VALID_PRIORITIES = {"Low", "Medium", "High"}
 
 def _fnv1a_32(data):
     hash_value = 0x811C9DC5
@@ -91,8 +92,8 @@ class Ticket:
 
     @priority.setter
     def priority(self, value):
-        if value not in {"Low", "Medium", "High"}:
-            raise ValueError("Priority must be one of: Low, Medium, High")
+        if value not in VALID_PRIORITIES:
+            raise ValueError("Priority must be one of: " + ", ".join(sorted(VALID_PRIORITIES)))
         self._priority = value
 
     @property

@@ -1,6 +1,6 @@
 import pytest
 
-from ticket_manager.ticket import Ticket
+from ticket_manager.ticket import VALID_PRIORITIES, VALID_STATUSES, Ticket
 
 def test_ticket_can_be_converted_to_dict():
     ticket = Ticket(
@@ -51,12 +51,12 @@ def test_ticket_can_be_created_from_dict():
         (
             "priority",
             "Invalid",
-            "Priority must be one of: Low, Medium, High",
+            f"Priority must be one of: {', '.join(sorted(VALID_PRIORITIES))}",
         ),
         (
             "status",
             "Invalid",
-            "Status must be one of: Closed, Open, Pending, Resolved, Waiting",
+            f"Status must be one of: {', '.join(sorted(VALID_STATUSES))}",
         ),
         (
             "title",

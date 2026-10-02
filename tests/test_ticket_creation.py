@@ -3,6 +3,7 @@ import pytest
 import ticket_manager.ticket as ticket_module
 from ticket_manager.ticket import Ticket
 from ticket_manager.ticket import _fnv1a_32
+from ticket_manager.ticket import VALID_PRIORITIES
 
 
 @pytest.fixture
@@ -72,7 +73,7 @@ def test_ticket_accepts_valid_status_updates(ticket, status):
 
 
 def test_ticket_rejects_invalid_status(ticket):
-    expected_msg = "Status must be one of: Closed, Open, Pending, Resolved, Waiting"
+    expected_msg = "Status must be one of: " + ", ".join(sorted(ticket_module.VALID_STATUSES))
     with pytest.raises(ValueError, match=expected_msg):
         ticket.status = "An Invalid Status"
 
@@ -121,5 +122,5 @@ def test_ticket_enforces_priority_values(ticket_arguments, valid_priority):
     ticket = Ticket(**ticket_arguments)
     assert ticket.priority == valid_priority
 
-    with pytest.raises(ValueError, match="Priority must be one of: Low, Medium, High"):
+    with pytest.raises(ValueError, match=f"Priority must be one of: {', '.join(sorted(VALID_PRIORITIES))}"):
         ticket.priority = "Some invalid priority"
