@@ -143,3 +143,19 @@ def test_create_reports_error_when_it_cannot_prompt(tmp_path, capsys, monkeypatc
     assert code == 1
     assert "cannot ask" in captured.err
     assert not path.exists()
+
+
+def test_show_unknown_id_reports_error(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    main(["--file", str(path), "create",
+          "--title", "Printer broken",
+          "--description", "The office printer does not work",
+          "--priority", "High"])
+    capsys.readouterr()
+
+    code = main(["--file", str(path), "show", "deadbeef"])
+
+    captured = capsys.readouterr()
+    assert code == 1
+    assert "deadbeef" in captured.err
+    assert "not found" in captured.err
