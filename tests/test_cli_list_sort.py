@@ -178,3 +178,23 @@ def test_list_sorts_by_status_in_workflow_order(tmp_path, capsys):
     assert printed_ids(capsys) == [
         "aaaa0002", "aaaa0004", "aaaa0003", "aaaa0005", "aaaa0001",
     ]
+
+
+def test_list_second_sort_rule_breaks_ties_of_the_first(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", status="Closed", priority="High"),
+        make_ticket("aaaa0002", status="Open", priority="Low"),
+        make_ticket("aaaa0003", status="Open", priority="High"),
+        make_ticket("aaaa0004", status="Closed", priority="Low"),
+    )
+
+    main(["--file", str(path), "list", "--sort", "priority", "status"])
+    by_priority_first = printed_ids(capsys)
+
+    main(["--file", str(path), "list", "--sort", "status", "priority"])
+    by_status_first = printed_ids(capsys)
+
+    assert by_priority_first == ["aaaa0003", "aaaa0001", "aaaa0002", "aaaa0004"]
+    assert by_status_first == ["aaaa0003", "aaaa0002", "aaaa0001", "aaaa0004"]
