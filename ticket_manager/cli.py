@@ -40,6 +40,10 @@ def build_parser():
         action=SortTagsAction, dest="sort",
     )
 
+    update = commands.add_parser("update")
+    update.add_argument("id")
+    update.add_argument("status", choices=VALID_STATUSES)
+
     return parser
 
 
@@ -143,10 +147,21 @@ def list_tickets(args):
     return 0
 
 
+def update_ticket(args):
+    manager = load_existing_tickets(args.file)
+
+    manager.update(args.id, status=args.status)
+    save_tickets(manager, args.file)
+
+    print(f"{args.id} status: {args.status}")
+    return 0
+
+
 COMMANDS = {
     "create": create_ticket,
     "show": show_ticket,
     "list": list_tickets,
+    "update": update_ticket,
 }
 
 class SortNamesAction(argparse.Action):
