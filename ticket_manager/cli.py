@@ -36,6 +36,16 @@ def show_ticket(args):
     if not Path(args.file).exists():
         print(f"Ticket file {args.file} not found", file=sys.stderr)
         return 1
+
+    manager = load_tickets(args.file)
+    ticket = manager.get(args.id)
+
+    print(f"ID:          {ticket.id}")
+    print(f"Title:       {ticket.title}")
+    print(f"Description: {ticket.description}")
+    print(f"Status:      {ticket.status}")
+    print(f"Priority:    {ticket.priority}")
+    print(f"Tags:        {', '.join(sorted(ticket.tags))}")
     return 0
 
 
