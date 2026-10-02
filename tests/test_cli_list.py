@@ -181,3 +181,25 @@ def test_list_tags_are_case_sensitive(tmp_path, capsys):
     main(["--file", str(path), "list", "--tags", "Printer"])
 
     assert capsys.readouterr().out.strip() == "No tickets found"
+
+
+def test_list_all_filters(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", "Open", "High", ["printer", "office"]),
+        make_ticket("aaaa0002", "Pending", "High", ["printer", "office"]),
+        make_ticket("aaaa0003", "Closed", "High", ["printer", "office"]),
+        make_ticket("aaaa0004", "Open", "Low", ["printer", "office"]),
+        make_ticket("aaaa0005", "Open", "High", ["printer"]),
+    )
+
+    code = main([
+        "--file", str(path), "list",
+        "--status", "Open", "Pending",
+        "--priority", "High",
+        "--tags", "printer", "office",
+    ])
+
+    assert code == 0
+    assert printed_ids(capsys) == ["aaaa0001", "aaaa0002"]
