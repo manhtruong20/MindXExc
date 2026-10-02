@@ -1,3 +1,7 @@
+def tag_match_count(include):
+    include = set(include)
+    return lambda ticket: len(ticket.tags & include)
+
 def sort_groups(groups, key, reverse=False):
     result = []
     for group in groups:
