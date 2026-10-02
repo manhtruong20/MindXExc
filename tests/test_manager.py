@@ -134,3 +134,22 @@ def test_iterating_manager_is_safe_while_removing(manager, ticket, other_ticket)
         manager.remove(t.id)
 
     assert manager.ids() == []
+
+
+def test_empty_manager_gives_one_empty_group(manager):
+    assert manager.groups() == [[]]
+
+
+def test_groups_holds_all_tickets_in_one_group_in_insertion_order(manager, ticket, other_ticket):
+    manager.add(other_ticket)
+    manager.add(ticket)
+
+    assert manager.groups() == [[other_ticket, ticket]]
+
+
+def test_groups_returns_a_copy(manager, ticket):
+    manager.add(ticket)
+
+    manager.groups()[0].clear()
+
+    assert manager.groups() == [[ticket]]
