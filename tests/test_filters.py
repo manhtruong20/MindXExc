@@ -68,6 +68,15 @@ def test_filter_by_several_priorities():
 
     assert result == [t1, t3]
 
+def test_filter_by_tags_requires_all_of_them():
+    t1 = make_ticket("aaaa0001", tags=["printer", "office"])
+    t2 = make_ticket("aaaa0002", tags=["printer"])
+    t3 = make_ticket("aaaa0003")
+
+    result = filter_tickets([t1, t2, t3], tags=["printer", "office"])
+
+    assert result == [t1]
+
 def test_filter_combines_status_and_priority():
     t1 = make_ticket("aaaa0001", status="Open", priority="High")
     t2 = make_ticket("aaaa0002", status="Open", priority="Low")
