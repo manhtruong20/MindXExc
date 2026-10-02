@@ -48,3 +48,24 @@ def test_list_rejects_unknown_status(tmp_path):
         main(["--file", str(tmp_path / "t.json"), "list", "--status", "Opne"])
 
     assert exit_info.value.code == 2
+
+
+def test_list_filters_by_priority(tmp_path, capsys):
+    path = tmp_path / "tickets.json"
+    write_tickets(
+        path,
+        make_ticket("aaaa0001", priority="High"),
+        make_ticket("aaaa0002", priority="Low"),
+        make_ticket("aaaa0003", priority="Medium"),
+    )
+
+    code = main(["--file", str(path), "list", "--priority", "High", "Medium"])
+
+    assert code == 0
+    assert printed_ids(capsys) == ["aaaa0001", "aaaa0003"]
+
+def test_list_rejects_unknown_priority(tmp_path):
+    with pytest.raises(SystemExit) as exit_info:
+        main(["--file", str(tmp_path / "t.json"), "list", "--priority", "Urgent"])
+
+    assert exit_info.value.code == 2
