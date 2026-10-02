@@ -150,6 +150,10 @@ def list_tickets(args):
 def update_ticket(args):
     manager = load_existing_tickets(args.file)
 
+    if manager.get(args.id) is None:
+        print(f"Ticket {args.id} not found", file=sys.stderr)
+        return 1
+
     manager.update(args.id, status=args.status)
     save_tickets(manager, args.file)
 
