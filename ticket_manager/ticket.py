@@ -1,5 +1,5 @@
 import time
-VALID_STATUSES = {"Open", "Pending", "Waiting", "Resolved", "Closed"}
+VALID_STATUSES = ("Open", "Pending", "Waiting", "Resolved", "Closed")
 UPDATABLE_FIELDS = {"title", "description", "priority", "status", "tags"}
 VALID_PRIORITIES = {"Low", "Medium", "High"}
 
