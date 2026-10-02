@@ -182,3 +182,14 @@ def test_from_dict_rejects_invalid_tags(bad_tags):
 
     with pytest.raises(ValueError, match="Tags"):
         Ticket.from_dict(data)
+
+
+@pytest.mark.parametrize("bad_tag", ["-urgent", "-", "--x"])
+def test_from_dict_rejects_tag_starting_with_dash(bad_tag):
+    data = {
+        "id": "a1b2c3d4", "title": "T", "description": "D",
+        "status": "Open", "priority": "High", "tags": ["ok", bad_tag],
+    }
+
+    with pytest.raises(ValueError, match="Tags"):
+        Ticket.from_dict(data)

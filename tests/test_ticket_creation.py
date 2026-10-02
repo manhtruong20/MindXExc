@@ -124,3 +124,29 @@ def test_ticket_enforces_priority_values(ticket_arguments, valid_priority):
 
     with pytest.raises(ValueError, match=f"Priority must be one of: {', '.join(sorted(VALID_PRIORITIES))}"):
         ticket.priority = "Some invalid priority"
+
+
+@pytest.mark.parametrize("bad_tags", ["-urgent", "ok -urgent", "--x", "-"])
+def test_ticket_rejects_tags_starting_with_dash(ticket_arguments, bad_tags):
+    with pytest.raises(ValueError, match="Tags"):
+        Ticket(**ticket_arguments, tags=bad_tags)
+
+
+def test_ticket_tags_setter_rejects_tag_starting_with_dash(ticket):
+    with pytest.raises(ValueError, match="Tags"):
+        ticket.tags = "-urgent"
+
+
+def test_ticket_allows_dash_inside_a_tag(ticket_arguments):
+    ticket = Ticket(**ticket_arguments, tags="high-priority a-b-")
+
+    assert ticket.tags == {"high-priority", "a-b-"}
+
+
+def test_failed_tags_assignment_keeps_old_tags(ticket_arguments):
+    ticket = Ticket(**ticket_arguments, tags="a b")
+
+    with pytest.raises(ValueError):
+        ticket.tags = "c -d"
+
+    assert ticket.tags == {"a", "b"}
