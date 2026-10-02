@@ -1,15 +1,15 @@
-from ticket_manager.sorting import sort_groups
+from ticket_manager.sorting import sort_groups, tag_match_count
 from ticket_manager.ticket import Ticket
 
 
-def make_ticket(ticket_id, priority="High", status="Open"):
+def make_ticket(ticket_id, priority="High", status="Open", tags=()):
     return Ticket.from_dict({
         "id": ticket_id,
         "title": f"Ticket {ticket_id}",
         "description": "Some description",
         "status": status,
         "priority": priority,
-        "tags": [],
+        "tags": list(tags),
     })
 
 
@@ -50,3 +50,18 @@ def test_reverse_orders_buckets_descending_and_keeps_insertion_order_in_ties():
     result = sort_groups([[t1, t2, t3]], key=lambda t: rank[t.priority], reverse=True)
 
     assert result == [[t2], [t1, t3]]
+
+
+def test_tag_match_count_ranks_tickets_by_matching_tags():
+    t1 = make_ticket("aaaa0001", tags=["printer"])
+    t2 = make_ticket("aaaa0002", tags=["printer", "office"])
+    t3 = make_ticket("aaaa0003", tags=[])
+    t4 = make_ticket("aaaa0004", tags=["printer"])
+
+    result = sort_groups(
+        [[t1, t2, t3, t4]],
+        key=tag_match_count(["printer", "office"]),
+        reverse=True,
+    )
+
+    assert result == [[t2], [t1, t4], [t3]]
