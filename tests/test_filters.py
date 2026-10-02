@@ -21,3 +21,30 @@ def test_filter_by_status():
     result = filter_tickets([t1, t2, t3], status="Open")
 
     assert result == [t1, t3]
+
+
+def test_filter_with_no_arguments_returns_everything():
+    t1 = make_ticket("aaaa0001", status="Open")
+    t2 = make_ticket("aaaa0002", status="Closed")
+
+    result = filter_tickets([t1, t2])
+
+    assert result == [t1, t2]
+
+def test_filter_with_empty_status_list_returns_everything():
+    t1 = make_ticket("aaaa0001", status="Open")
+    t2 = make_ticket("aaaa0002", status="Closed")
+
+    result = filter_tickets([t1, t2], status=[])
+
+    assert result == [t1, t2]
+
+
+def test_filter_by_several_statuses():
+    t1 = make_ticket("aaaa0001", status="Open")
+    t2 = make_ticket("aaaa0002", status="Closed")
+    t3 = make_ticket("aaaa0003", status="Pending")
+
+    result = filter_tickets([t1, t2, t3], status=["Open", "Pending"])
+
+    assert result == [t1, t3]
