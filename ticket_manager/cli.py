@@ -5,7 +5,7 @@ from pathlib import Path
 from ticket_manager.storage import StorageError, load_tickets, save_tickets
 from ticket_manager.ticket import Ticket, VALID_STATUSES, VALID_PRIORITIES
 from ticket_manager.filters import filter_tickets
-from ticket_manager.sorting import flatten, priority_rank, sort_groups, status_rank
+from ticket_manager.sorting import flatten, priority_rank, sort_groups, status_rank, tag_match_count
 
 
 SORT_RULES = {
@@ -31,7 +31,14 @@ def build_parser():
     list_command.add_argument("--status", nargs="+", choices=sorted(VALID_STATUSES))
     list_command.add_argument("--priority", nargs="+", choices=sorted(VALID_PRIORITIES))
     list_command.add_argument("--tags", nargs="+")
-    list_command.add_argument("--sort", nargs="+", choices=list(SORT_RULES))
+    list_command.add_argument(
+        "--sort", nargs="+", choices=list(SORT_RULES),
+        action=SortNamesAction, dest="sort",
+    )
+    list_command.add_argument(
+        "--sorttag", nargs="+", metavar="TAG",
+        action=SortTagsAction, dest="sort",
+    )
 
     return parser
 
@@ -128,10 +135,22 @@ COMMANDS = {
     "list": list_tickets,
 }
 
-def sort_tickets(tickets, rule_names):
+class SortNamesAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        rules = list(getattr(namespace, self.dest) or [])
+        rules.extend(SORT_RULES[name] for name in values)
+        setattr(namespace, self.dest, rules)
+
+
+class SortTagsAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        rules = list(getattr(namespace, self.dest) or [])
+        rules.append((tag_match_count(values), True))
+        setattr(namespace, self.dest, rules)
+
+def sort_tickets(tickets, rules):
     groups = [tickets]
-    for name in rule_names or []:
-        key, reverse = SORT_RULES[name]
+    for key, reverse in rules or []:
         groups = sort_groups(groups, key=key, reverse=reverse)
     return flatten(groups)
 
