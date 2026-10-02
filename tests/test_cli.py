@@ -1,5 +1,11 @@
 from ticket_manager.cli import main
 from ticket_manager.storage import load_tickets
+import pytest
+
+@pytest.fixture(autouse=True)
+def blank_answers_by_default(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda prompt="": "")
+
 
 def test_show_on_missing_file_reports_error(tmp_path, capsys):
     path = tmp_path / "tickets.json"
@@ -44,3 +50,42 @@ def test_show_prints_ticket_details(tmp_path, capsys):
     assert "The office printer does not work" in out
     assert "High" in out
     assert "Open" in out
+
+
+def test_create_prompts_for_missing_arguments(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "tickets.json"
+    answers = iter([
+        "Printer broken",
+        "The office printer does not work",
+        "High",
+        "printer office",
+    ])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+
+    code = main(["--file", str(path), "create"])
+
+    ticket = load_tickets(path).get(capsys.readouterr().out.strip())
+    assert code == 0
+    assert ticket.title == "Printer broken"
+    assert ticket.description == "The office printer does not work"
+    assert ticket.priority == "High"
+    assert ticket.tags == {"printer", "office"}
+
+
+def test_create_does_not_prompt_for_arguments_already_given(tmp_path, monkeypatch):
+    path = tmp_path / "tickets.json"
+
+    def fail(prompt=""):
+        raise AssertionError(f"unexpected prompt: {prompt}")
+
+    monkeypatch.setattr("builtins.input", fail)
+
+    code = main([
+        "--file", str(path), "create",
+        "--title", "Printer broken",
+        "--description", "The office printer does not work",
+        "--priority", "High",
+        "--tags",
+    ])
+
+    assert code == 0
