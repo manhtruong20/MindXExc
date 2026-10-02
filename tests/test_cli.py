@@ -89,3 +89,41 @@ def test_create_does_not_prompt_for_arguments_already_given(tmp_path, monkeypatc
     ])
 
     assert code == 0
+
+
+def test_create_asks_again_after_an_invalid_answer(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "tickets.json"
+    answers = iter([
+        "Printer broken",
+        "The office printer does not work",
+        "invalid priority",
+        "High",
+        "",# no tag
+    ])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+
+    code = main(["--file", str(path), "create"])
+
+    captured = capsys.readouterr()
+    ticket = load_tickets(path).get(captured.out.strip())
+    assert code == 0
+    assert ticket.priority == "High"
+    assert "Priority must be one of" in captured.err
+
+
+def test_create_asks_again_when_a_given_argument_is_invalid(tmp_path, capsys, monkeypatch):
+    path = tmp_path / "tickets.json"
+    answers = iter(["High"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+
+    code = main([
+        "--file", str(path), "create",
+        "--title", "Printer broken",
+        "--description", "The office printer does not work",
+        "--priority", "Urgent",
+        "--tags",
+    ])
+
+    ticket = load_tickets(path).get(capsys.readouterr().out.strip())
+    assert code == 0
+    assert ticket.priority == "High"
