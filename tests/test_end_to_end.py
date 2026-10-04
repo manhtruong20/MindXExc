@@ -3,6 +3,12 @@
 Unlike the other CLI tests (which call main(...) in-process), these go through
 python -m ticket_manager, real stdin/stdout/stderr and real exit codes, with a
 fresh temporary folder as the working directory.
+
+In the comments above each test, commands are shown without the leading
+`python -m ticket_manager`, and <id> means the id printed by an earlier create.
+
+Not exercised here: --sorttag, --help, `--sort status` on its own, and
+`--tags` filtering combined with `--sort status`.
 """
 import os
 import shutil
@@ -56,6 +62,14 @@ def listed_ids(result):
 
 #main test codes
 
+# Commands run, each as its own process:
+#   create --title "Printer broken" --description "Office printer is down" --priority High --tags printer office
+#   list
+#   show <id>
+#   update <id> Pending
+#   list --status Pending
+#   list --status Open
+#   show <id>
 def test_ticket_lifecycle_across_separate_processes(tmp_path):
     created = run(
         tmp_path, "create",
@@ -87,6 +101,9 @@ def test_ticket_lifecycle_across_separate_processes(tmp_path):
     assert "Pending" in run(tmp_path, "show", ticket_id).stdout
 
 
+# Commands run:
+#   --file work.json create --title "Printer broken" --description "Office printer is down" --priority High --tags
+#   --file work.json show <id>
 def test_file_option_uses_a_different_file(tmp_path):
     result = run(
         tmp_path, "--file", "work.json", "create",
@@ -104,8 +121,23 @@ def test_file_option_uses_a_different_file(tmp_path):
     assert "Printer broken" in shown.stdout
 
 
-#filtering and sorting
+# --- filtering and sorting through the real command ---
 
+# Setup, four tickets made with
+#   create --title <title> --description "Some description" --priority <priority> --tags <tags>
+#     Monitor flickers | Low    | monitor
+#     Printer broken   | High   | printer office
+#     Printer slow     | Medium | printer
+#     Keyboard sticky  | High   | (no tags, `--tags` alone)
+# Commands run:
+#   update <printer slow id> Closed
+#   list
+#   list --priority High
+#   list --tags printer office
+#   list --status Closed
+#   list --priority High Medium --tags printer
+#   list --sort priority
+#   list --priority High Low --sort priority
 def test_list_filters_and_sorts(tmp_path):
     low = create(tmp_path, "Monitor flickers", "Low", ["monitor"])
     high_printer = create(tmp_path, "Printer broken", "High", ["printer", "office"])
@@ -131,6 +163,9 @@ def test_list_filters_and_sorts(tmp_path):
     ) == [high_printer, high_other, low]
 
 
+# Setup: two tickets created with create. Commands run:
+#   list --status Open --sort priority status
+#   list --tags nothing
 def test_filtering_and_sorting_never_modify_the_file(tmp_path):
     create(tmp_path, "Printer broken", "High", ["printer"])
     create(tmp_path, "Monitor flickers", "Low")
@@ -144,13 +179,16 @@ def test_filtering_and_sorting_never_modify_the_file(tmp_path):
 
 #interactive create
 
+# Commands run:
+#   create          (answers typed in: title, description, "Urgent", "High", tags)
+#   show <id>
 def test_create_asks_for_missing_values_and_asks_again_after_a_bad_one(tmp_path):
     answers = "\n".join([
-        "Printer broken",
-        "Office printer is down",
-        "Urgent",
-        "High",
-        "printer office",
+        "Printer broken",             # title
+        "Office printer is down",     # description
+        "Urgent",                     # invalid priority
+        "High",                       # asked again
+        "printer office",             # tags
     ]) + "\n"
 
     result = run(tmp_path, "create", stdin=answers)
@@ -164,6 +202,8 @@ def test_create_asks_for_missing_values_and_asks_again_after_a_bad_one(tmp_path)
         assert expected in shown.stdout
 
 
+# Commands run:
+#   create --title "Printer broken" --description "Office printer is down" --priority High --tags
 def test_create_does_not_ask_when_everything_is_given(tmp_path):
     result = run(
         tmp_path, "create",
@@ -177,6 +217,8 @@ def test_create_does_not_ask_when_everything_is_given(tmp_path):
     assert result.stdout.strip() == result.stdout.split()[-1]  # only the id was printed
 
 
+# Commands run (with no input available):
+#   create --title "Printer broken"
 def test_create_without_input_reports_error_and_writes_nothing(tmp_path):
     result = run(tmp_path, "create", "--title", "Printer broken")
 
@@ -188,6 +230,17 @@ def test_create_without_input_reports_error_and_writes_nothing(tmp_path):
 
 #errors: exit code, message on stderr
 
+# Each command runs in an empty folder, so no file exists. Expected exit code:
+#   list                        -> 1
+#   show deadbeef               -> 1
+#   update deadbeef Closed      -> 1
+#   update deadbeef Nope        -> 2
+#   update deadbeef             -> 2
+#   list --status Opne          -> 2
+#   list --priority Urgent      -> 2
+#   list --sort title           -> 2
+#   frobnicate                  -> 2
+#   (no arguments at all)       -> 2
 @pytest.mark.parametrize("args, code, message", [
     (["list"], 1, "not found"),
     (["show", "deadbeef"], 1, "not found"),
@@ -209,6 +262,11 @@ def test_errors_on_a_missing_file_use_exit_codes_and_create_nothing(tmp_path, ar
     assert not (tmp_path / "tickets.json").exists()
 
 
+# The file contains `{not valid json`. Each command must exit 1 and leave it untouched:
+#   list
+#   show aaaa0001
+#   update aaaa0001 Closed
+#   create --title T --description D --priority High --tags
 @pytest.mark.parametrize("args", [
     ["list"],
     ["show", "aaaa0001"],
@@ -227,6 +285,9 @@ def test_corrupted_file_is_reported_and_never_overwritten(tmp_path, args):
     assert path.read_text() == "{not valid json"
 
 
+# Setup: one ticket created with create. Commands run:
+#   show deadbeef
+#   update deadbeef Closed
 def test_unknown_id_leaves_existing_tickets_untouched(tmp_path):
     create(tmp_path, "Printer broken")
     before = (tmp_path / "tickets.json").read_text()
@@ -241,6 +302,8 @@ def test_unknown_id_leaves_existing_tickets_untouched(tmp_path):
 
 #exit codes of successful commands
 
+# Setup: one ticket created with create. Commands run:
+#   list --status Closed
 def test_successful_commands_exit_with_zero_even_when_nothing_matches(tmp_path):
     create(tmp_path, "Printer broken")
 
@@ -253,6 +316,8 @@ def test_successful_commands_exit_with_zero_even_when_nothing_matches(tmp_path):
 
 #the installed command
 
+# Runs the real launcher instead of `python -m ticket_manager`:
+#   tickets list
 @pytest.mark.skipif(shutil.which("tickets") is None, reason="tickets command is not installed")
 def test_installed_tickets_command_works(tmp_path):
     result = subprocess.run(
