@@ -17,5 +17,5 @@ dev = ["pytest", "pytest-depends"]
 include = ["ticket_manager*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "test_kb"]
 pythonpath = ["."]
