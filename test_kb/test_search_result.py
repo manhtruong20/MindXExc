@@ -9,3 +9,11 @@ def test_search_result_wraps_document_and_match_type():
 
     assert result.document is doc
     assert result.match_type == "semantic"
+
+
+def test_match_type_has_a_default():
+    doc = Document("doc-1", "Welcome email", "Hello", "/templates/email")
+
+    result = SearchResult(document=doc)
+
+    assert result.match_type == "unknown"
