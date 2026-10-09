@@ -1,10 +1,10 @@
 from kb.cli import main
-
+import pytest
 
 def env_for(tmp_path):
     return {"KB_CLIENT": "mock", "KB_MOCK_FILE": str(tmp_path / "kb.json")}
 
-
+#retrieve command tests
 def test_retrieve_prints_the_document(tmp_path, capsys):
     code = main(["retrieve", "doc-001"], env_for(tmp_path))
 
@@ -61,3 +61,59 @@ def test_retrieve_help_mentions_the_full_option(capsys):
     out = capsys.readouterr().out
     assert code == 0
     assert "--full" in out
+
+
+#search command tests
+def test_search_lists_matching_documents(tmp_path, capsys):
+    code = main(["search", "deployment"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "doc-006" in out
+    assert "Deployment Guide" in out
+    assert "/docs/guides" in out
+    assert "keyword" in out
+
+
+def test_search_top_k_limits_the_results(tmp_path, capsys):
+    main(["search", "email", "--top-k", "1"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "doc-001" in out
+    assert "doc-004" not in out
+
+
+def test_search_returns_five_results_by_default(tmp_path, capsys):
+    main(["search", ""], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "doc-005" in out
+    assert "doc-006" not in out
+
+
+def test_search_without_matches_says_so(tmp_path, capsys):
+    code = main(["search", "zzz-no-such-text"], env_for(tmp_path))
+
+    assert code == 0
+    assert "No documents found" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "abc"])
+def test_search_rejects_a_bad_top_k(tmp_path, value):
+    code = main(["search", "email", "--top-k", value], env_for(tmp_path))
+
+    assert code == 2
+
+
+def test_search_requires_a_query(tmp_path):
+    assert main(["search"], env_for(tmp_path)) == 2
+
+
+def test_corrupted_data_file_exits_1(tmp_path, capsys):
+    path = tmp_path / "kb.json"
+    path.write_text("{not json", encoding="utf-8")
+
+    code = main(["retrieve", "doc-001"], {"KB_MOCK_FILE": str(path)})
+
+    assert code == 1
+    assert "not valid JSON" in capsys.readouterr().err
