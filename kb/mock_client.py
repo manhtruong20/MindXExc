@@ -59,7 +59,9 @@ class MockKBClient(KBClient):
         raise NotImplementedError
 
     def list_documents(self, node_path, limit):
-        raise NotImplementedError
+        return [
+            doc for doc in self._documents.values() if doc.node_path == node_path
+        ]
 
     def add(self, title, content, node_path, tags):
         raise NotImplementedError
