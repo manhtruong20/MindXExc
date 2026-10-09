@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from kb.factory import make_client
+from kb.formatting import preview
 
 
 def build_parser():
@@ -23,7 +24,7 @@ def retrieve_document(client, args):
     print(f"node: {doc.node_path}")
     print(f"tags: {', '.join(doc.tags)}")
     print()
-    print(doc.content)
+    print(preview(doc.content))
     return 0
 
 
