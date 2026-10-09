@@ -1,0 +1,2 @@
+class KBStorageError(ValueError):
+    pass
