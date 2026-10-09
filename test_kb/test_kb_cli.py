@@ -35,3 +35,12 @@ def test_missing_document_id_exits_2(tmp_path, capsys):
     code = main(["retrieve"], env_for(tmp_path))
 
     assert code == 2
+
+
+def test_retrieve_shows_only_a_preview_of_long_content(tmp_path, capsys):
+    main(["retrieve", "doc-006"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "2. Deploy to staging" in out
+    assert "3. Deploy to production" not in out
+    assert "..." in out
