@@ -4,6 +4,16 @@ import sys
 from kb.factory import make_client
 from kb.formatting import preview
 
+DEFAULT_TOP_K = 5
+
+def positive_int(text):
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number")
+    if value < 1:
+        raise argparse.ArgumentTypeError("must be 1 or more")
+    return value
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="kb")
@@ -23,6 +33,22 @@ def build_parser():
         "--full",
         action="store_true",
         help="print the whole content instead of a 3-line preview",
+    )
+
+    search = commands.add_parser(
+        "search",
+        help="search documents by text",
+        description=(
+            "Search titles, content and tags (case-insensitive). "
+            "Prints one line per match."
+        ),
+    )
+    search.add_argument("query", help="text to look for")
+    search.add_argument(
+        "--top-k",
+        type=positive_int,
+        default=DEFAULT_TOP_K,
+        help=f"maximum number of results (default {DEFAULT_TOP_K})",
     )
 
     return parser
@@ -46,6 +72,15 @@ def retrieve_document(client, args):
     print(doc.content if args.full else preview(doc.content))
     return 0
 
+def search_documents(client, args):
+    results = client.search(args.query, args.top_k)
+    if not results:
+        print("No documents found.")
+        return 0
+    for result in results:
+        doc = result.document
+        print(f"{doc.id}  {doc.title}  {doc.node_path}  [{result.match_type}]")
+    return 0
 
 def main(argv=None, environ=None):
     try:
@@ -61,3 +96,5 @@ def main(argv=None, environ=None):
 
     if args.command == "retrieve":
         return retrieve_document(client, args)
+    elif args.command == "search":
+        return search_documents(client, args)
