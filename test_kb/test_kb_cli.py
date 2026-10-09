@@ -44,3 +44,20 @@ def test_retrieve_shows_only_a_preview_of_long_content(tmp_path, capsys):
     assert "2. Deploy to staging" in out
     assert "3. Deploy to production" not in out
     assert "..." in out
+
+
+def test_retrieve_full_prints_the_whole_content(tmp_path, capsys):
+    code = main(["retrieve", "doc-006", "--full"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "3. Deploy to production" in out
+    assert "..." not in out
+
+
+def test_retrieve_help_mentions_the_full_option(capsys):
+    code = main(["retrieve", "--help"], {})
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "--full" in out
