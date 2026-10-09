@@ -42,3 +42,35 @@ def test_empty_id_is_rejected():
             content="Hello and welcome!",
             node_path="/templates/email",
         )
+
+
+def test_to_dict_contains_every_field():
+    doc = Document("doc-1", "Welcome", "Hello", "/templates/email", ["email"])
+
+    assert doc.to_dict() == {
+        "id": "doc-1",
+        "title": "Welcome",
+        "content": "Hello",
+        "node_path": "/templates/email",
+        "tags": ["email"],
+    }
+
+
+def test_from_dict_rebuilds_the_document():
+    data = {
+        "id": "doc-1",
+        "title": "Welcome",
+        "content": "Hello",
+        "node_path": "/templates/email",
+        "tags": ["email"],
+    }
+
+    assert Document.from_dict(data) == Document(
+        "doc-1", "Welcome", "Hello", "/templates/email", ["email"]
+    )
+
+
+def test_dict_round_trip_gives_an_equal_document():
+    doc = Document("doc-1", "Welcome", "Hello", "/templates/email", ["a", "b"])
+
+    assert Document.from_dict(doc.to_dict()) == doc
