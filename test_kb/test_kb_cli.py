@@ -1,5 +1,6 @@
 from kb.cli import main
 import pytest
+import json
 
 def env_for(tmp_path):
     return {"KB_CLIENT": "mock", "KB_MOCK_FILE": str(tmp_path / "kb.json")}
@@ -117,3 +118,64 @@ def test_corrupted_data_file_exits_1(tmp_path, capsys):
 
     assert code == 1
     assert "not valid JSON" in capsys.readouterr().err
+
+
+#list command tests
+def write_documents(tmp_path, count, node="/bulk"):
+    records = [
+        {
+            "id": f"doc-{number:03d}",
+            "title": f"Doc {number}",
+            "content": "x",
+            "node_path": node,
+            "tags": [],
+        }
+        for number in range(1, count + 1)
+    ]
+    (tmp_path / "kb.json").write_text(json.dumps(records), encoding="utf-8")
+
+
+def test_list_shows_the_documents_in_a_node(tmp_path, capsys):
+    code = main(["list", "--node", "/templates/email"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "doc-001" in out
+    assert "doc-004" in out
+    assert "doc-002" not in out
+
+
+def test_list_limit_caps_the_results(tmp_path, capsys):
+    main(["list", "--node", "/templates/email", "--limit", "1"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "doc-001" in out
+    assert "doc-004" not in out
+
+
+def test_list_shows_ten_documents_by_default(tmp_path, capsys):
+    write_documents(tmp_path, 11)
+
+    main(["list", "--node", "/bulk"], env_for(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "doc-010" in out
+    assert "doc-011" not in out
+
+
+def test_list_of_an_empty_node_says_so(tmp_path, capsys):
+    code = main(["list", "--node", "/nowhere"], env_for(tmp_path))
+
+    assert code == 0
+    assert "No documents found" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "abc"])
+def test_list_rejects_a_bad_limit(tmp_path, value):
+    argv = ["list", "--node", "/templates/email", "--limit", value]
+
+    assert main(argv, env_for(tmp_path)) == 2
+
+
+def test_list_requires_a_node(tmp_path):
+    assert main(["list"], env_for(tmp_path)) == 2
