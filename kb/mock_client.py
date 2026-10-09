@@ -1,5 +1,6 @@
 from uuid import uuid4
-
+import json
+from pathlib import Path
 from kb.client import KBClient
 from kb.document import Document
 from kb.search_result import SearchResult
@@ -52,8 +53,21 @@ BUILT_IN_DOCUMENTS = [
 
 class MockKBClient(KBClient):
     def __init__(self, path):
-        self._path = path
-        self._documents = {doc.id: doc for doc in BUILT_IN_DOCUMENTS}
+        self._path = Path(path)
+        self._documents = self._load()
+
+    def _load(self):
+        if not self._path.exists():
+            return {doc.id: doc for doc in BUILT_IN_DOCUMENTS}
+        text = self._path.read_text(encoding="utf-8")
+        records = json.loads(text)
+        documents = [Document.from_dict(record) for record in records]
+        return {doc.id: doc for doc in documents}
+
+    def _save(self):
+        records = [doc.to_dict() for doc in self._documents.values()]
+        text = json.dumps(records, indent=2)
+        self._path.write_text(text, encoding="utf-8")
 
     def retrieve(self, doc_id):
         return self._documents.get(doc_id)
@@ -77,4 +91,5 @@ class MockKBClient(KBClient):
         doc_id = f"doc-{uuid4().hex[:8]}"
         doc = Document(doc_id, title, content, node_path, list(tags))
         self._documents[doc_id] = doc
+        self._save()
         return doc
