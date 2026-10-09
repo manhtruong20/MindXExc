@@ -76,3 +76,49 @@ def test_search_with_no_match_returns_empty_list(tmp_path):
     client = MockKBClient(tmp_path / "kb.json")
 
     assert client.search("zzz-no-such-text", top_k=5) == []
+
+
+#tests for add method
+def test_add_returns_the_stored_document(tmp_path):
+    client = MockKBClient(tmp_path / "kb.json")
+
+    doc = client.add("Welcome SMS", "Hi {name}!", "/templates/sms", ["sms"])
+
+    assert doc.title == "Welcome SMS"
+    assert doc.content == "Hi {name}!"
+    assert doc.node_path == "/templates/sms"
+    assert doc.tags == ["sms"]
+
+
+def test_add_assigns_different_ids(tmp_path):
+    client = MockKBClient(tmp_path / "kb.json")
+
+    first = client.add("A", "a", "/x", [])
+    second = client.add("B", "b", "/x", [])
+
+    assert first.id != second.id
+
+def test_added_document_can_be_retrieved(tmp_path):
+    client = MockKBClient(tmp_path / "kb.json")
+
+    doc = client.add("Welcome SMS", "Hi", "/templates/sms", ["sms"])
+
+    assert client.retrieve(doc.id) == doc
+
+
+def test_added_document_appears_in_its_node_listing(tmp_path):
+    client = MockKBClient(tmp_path / "kb.json")
+
+    client.add("Welcome SMS", "Hi", "/templates/sms", ["sms"])
+    docs = client.list_documents("/templates/sms", limit=10)
+
+    assert [doc.title for doc in docs] == ["Welcome SMS"]
+
+
+def test_added_document_can_be_found_by_search(tmp_path):
+    client = MockKBClient(tmp_path / "kb.json")
+
+    client.add("Welcome SMS", "Hi", "/templates/sms", ["sms"])
+    results = client.search("welcome sms", top_k=5)
+
+    assert [r.document.title for r in results] == ["Welcome SMS"]
