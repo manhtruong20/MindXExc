@@ -179,3 +179,42 @@ def test_list_rejects_a_bad_limit(tmp_path, value):
 
 def test_list_requires_a_node(tmp_path):
     assert main(["list"], env_for(tmp_path)) == 2
+
+
+#add command tests
+def make_input_file(tmp_path, name, text):
+    path = tmp_path / name
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def test_add_stores_the_file_as_a_document(tmp_path, capsys):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "welcome-sms.md", "Hello SMS")
+
+    code = main(
+        ["add", "--file", str(path), "--path", "/templates/sms", "--tags", "sms,promo"],
+        env,
+    )
+
+    out = capsys.readouterr().out
+    assert code == 0
+    assert out.startswith("Added doc-")
+
+    doc_id = out.split()[1]
+    assert main(["retrieve", doc_id, "--full"], env) == 0
+    retrieved = capsys.readouterr().out
+    assert "welcome-sms" in retrieved
+    assert "/templates/sms" in retrieved
+    assert "tags: sms, promo" in retrieved
+    assert "Hello SMS" in retrieved
+
+
+def test_add_works_without_tags(tmp_path):
+    path = make_input_file(tmp_path, "note.md", "text")
+
+    code = main(
+        ["add", "--file", str(path), "--path", "/notes"], env_for(tmp_path)
+    )
+
+    assert code == 0
