@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from kb.client import KBClient
 from kb.document import Document
 from kb.search_result import SearchResult
@@ -72,4 +74,7 @@ class MockKBClient(KBClient):
         return matches[:limit]
 
     def add(self, title, content, node_path, tags):
-        raise NotImplementedError
+        doc_id = f"doc-{uuid4().hex[:8]}"
+        doc = Document(doc_id, title, content, node_path, list(tags))
+        self._documents[doc_id] = doc
+        return doc
