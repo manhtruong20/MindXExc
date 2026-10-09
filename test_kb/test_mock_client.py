@@ -122,3 +122,14 @@ def test_added_document_can_be_found_by_search(tmp_path):
     results = client.search("welcome sms", top_k=5)
 
     assert [r.document.title for r in results] == ["Welcome SMS"]
+
+
+def test_added_document_survives_a_new_client(tmp_path):
+    path = tmp_path / "kb.json"
+
+    first_client = MockKBClient(path)
+    doc = first_client.add("Welcome SMS", "Hi", "/templates/sms", ["sms"])
+
+    second_client = MockKBClient(path)
+
+    assert second_client.retrieve(doc.id) == doc
