@@ -5,6 +5,7 @@ from kb.factory import make_client
 from kb.formatting import preview
 
 DEFAULT_TOP_K = 5
+DEFAULT_LIMIT = 10
 
 def positive_int(text):
     try:
@@ -51,6 +52,24 @@ def build_parser():
         help=f"maximum number of results (default {DEFAULT_TOP_K})",
     )
 
+    list_command = commands.add_parser(
+        "list",
+        help="list the documents in a node",
+        description=(
+            "List the documents stored directly in one node (folder), "
+            "for example /templates/email. Child nodes are not included."
+        ),
+    )
+    list_command.add_argument(
+        "--node", required=True, help="node path, e.g. /templates/email"
+    )
+    list_command.add_argument(
+        "--limit",
+        type=positive_int,
+        default=DEFAULT_LIMIT,
+        help=f"maximum number of documents (default {DEFAULT_LIMIT})",
+    )
+
     return parser
 
 
@@ -82,6 +101,15 @@ def search_documents(client, args):
         print(f"{doc.id}  {doc.title}  {doc.node_path}  [{result.match_type}]")
     return 0
 
+def list_node(client, args):
+    docs = client.list_documents(args.node, args.limit)
+    if not docs:
+        print("No documents found.")
+        return 0
+    for doc in docs:
+        print(f"{doc.id}  {doc.title}  [{', '.join(doc.tags)}]")
+    return 0
+
 def main(argv=None, environ=None):
     try:
         args = build_parser().parse_args(argv)
@@ -98,3 +126,5 @@ def main(argv=None, environ=None):
         return retrieve_document(client, args)
     elif args.command == "search":
         return search_documents(client, args)
+    elif args.command == "list":
+        return list_node(client, args)
