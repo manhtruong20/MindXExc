@@ -1,5 +1,6 @@
 from kb.client import KBClient
 from kb.document import Document
+from kb.search_result import SearchResult
 
 BUILT_IN_DOCUMENTS = [
     Document(
@@ -56,12 +57,19 @@ class MockKBClient(KBClient):
         return self._documents.get(doc_id)
 
     def search(self, query, top_k):
-        raise NotImplementedError
+        needle = query.lower()
+        results = []
+        for doc in self._documents.values():
+            texts = [doc.title, doc.content, *doc.tags]
+            if any(needle in text.lower() for text in texts):
+                results.append(SearchResult(doc, "keyword"))
+        return results[:top_k]
 
     def list_documents(self, node_path, limit):
-        return [
+        matches = [
             doc for doc in self._documents.values() if doc.node_path == node_path
         ]
+        return matches[:limit]
 
     def add(self, title, content, node_path, tags):
         raise NotImplementedError
