@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from kb.client import KBClient
 from kb.document import Document
+from kb.errors import KBStorageError
 from kb.search_result import SearchResult
 
 BUILT_IN_DOCUMENTS = [
@@ -59,9 +60,18 @@ class MockKBClient(KBClient):
     def _load(self):
         if not self._path.exists():
             return {doc.id: doc for doc in BUILT_IN_DOCUMENTS}
-        text = self._path.read_text(encoding="utf-8")
-        records = json.loads(text)
-        documents = [Document.from_dict(record) for record in records]
+        try:
+            records = json.loads(self._path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as error:
+            raise KBStorageError(f"{self._path} is not valid JSON: {error}") from error
+        if not isinstance(records, list):
+            raise KBStorageError(f"{self._path} must contain a list of documents")
+        documents = []
+        for number, record in enumerate(records, start=1):
+            try:
+                documents.append(Document.from_dict(record))
+            except (KeyError, TypeError, ValueError) as error:
+                raise KBStorageError(f"record {number} is invalid: {error!r}") from error
         return {doc.id: doc for doc in documents}
 
     def _save(self):
