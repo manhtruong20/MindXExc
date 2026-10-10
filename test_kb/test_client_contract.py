@@ -1,3 +1,14 @@
+"""Contract tests: every KBClient implementation must pass all of these.
+
+The `client` fixture (conftest.py) yields a fresh client of each kind,
+holding the six sample documents doc-001 ... doc-006. To check a new kind of
+client, add it to CLIENT_KINDS in conftest.py.
+"""
+
+from xml.dom.minidom import Document
+from kb.search_result import SearchResult
+
+
 def test_retrieve_returns_a_built_in_document(client):
     doc = client.retrieve("doc-001")
 
@@ -98,3 +109,42 @@ def test_added_document_survives_a_new_client(client):
     second_client = type(client)(client._path)
 
     assert second_client.retrieve(doc.id) == doc
+
+
+#Contract tests
+def test_retrieve_returns_a_document(client):
+    assert isinstance(client.retrieve("doc-001"), Document)
+
+
+def test_list_documents_returns_documents(client):
+    docs = client.list_documents("/templates/email", limit=10)
+
+    assert docs
+    assert all(isinstance(doc, Document) for doc in docs)
+
+
+def test_list_documents_of_an_empty_node_is_an_empty_list(client):
+    assert client.list_documents("/nowhere", limit=10) == []
+
+
+def test_search_returns_search_results(client):
+    results = client.search("email", top_k=5)
+
+    assert results
+    assert all(isinstance(result, SearchResult) for result in results)
+    assert all(isinstance(result.document, Document) for result in results)
+
+
+def test_search_with_an_empty_query_matches_everything_up_to_top_k(client):
+    results = client.search("", top_k=3)
+
+    assert [r.document.id for r in results] == ["doc-001", "doc-002", "doc-003"]
+
+
+def test_add_keeps_its_own_copy_of_the_tags(client):
+    tags = ["sms"]
+    doc = client.add("Welcome SMS", "Hi", "/templates/sms", tags)
+
+    tags.append("changed-later")
+
+    assert client.retrieve(doc.id).tags == ["sms"]
