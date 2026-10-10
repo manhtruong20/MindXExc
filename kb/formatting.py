@@ -1,6 +1,8 @@
 import textwrap
 
-def preview(text, width=80, max_lines=3):
+PREVIEW_WIDTH = 80
+PREVIEW_LINES = 3
+def preview(text, width=PREVIEW_WIDTH, max_lines=PREVIEW_LINES):
     """Return a short preview of ``text`` for terminal output.
 
     Every line is wrapped at ``width`` characters. Only the first

@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from kb.factory import make_client
-from kb.formatting import preview
+from kb.formatting import PREVIEW_LINES, PREVIEW_WIDTH, preview
 from pathlib import Path
 
 DEFAULT_TOP_K = 5
@@ -66,8 +66,8 @@ def build_parser():
         help="show one document by id",
         description=(
             "Show one document: a small header, then a preview of its content "
-            "(first 3 lines, wrapped at 80 characters). Use --full to print "
-            "the whole content."
+            f"(first {PREVIEW_LINES} lines, wrapped at {PREVIEW_WIDTH} "
+            "characters). Use --full to print the whole content."
         ),
     )
     retrieve.add_argument("doc_id", help="id of the document, e.g. doc-001")
@@ -187,6 +187,13 @@ def add_document(client, args):
     print(f"Added {doc.id}  {doc.title}  {doc.node_path}")
     return 0
 
+COMMANDS = {
+    "retrieve": retrieve_document,
+    "search": search_documents,
+    "list": list_node,
+    "add": add_document,
+}
+
 def main(argv=None, environ=None):
     try:
         args = build_parser().parse_args(argv)
@@ -200,14 +207,7 @@ def main(argv=None, environ=None):
         return 1
 
     try:
-        if args.command == "retrieve":
-            return retrieve_document(client, args)
-        elif args.command == "search":
-            return search_documents(client, args)
-        elif args.command == "list":
-            return list_node(client, args)
-        elif args.command == "add":
-            return add_document(client, args)
+        return COMMANDS[args.command](client, args)
     except EOFError:
         print(
             "Missing arguments and cannot ask for them: no input available",
