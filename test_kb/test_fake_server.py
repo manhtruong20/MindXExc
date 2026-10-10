@@ -55,6 +55,13 @@ def test_an_unknown_path_is_404(server_url):
     assert status == 404
     assert "error" in body
 
+def test_an_unknown_path_with_a_large_body_is_still_404(server_url):
+    for _ in range(20):
+        status, body = post(server_url, "/nonsense", {"padding": "x" * 100_000})
+
+        assert status == 404
+        assert "error" in body
+
 #fake server tests for latency simulation
 def test_latency_waits_a_random_time_inside_the_range(tmp_path):
     from kb.fake_server import make_server, serve_in_background
