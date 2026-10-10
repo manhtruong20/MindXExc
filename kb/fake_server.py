@@ -4,13 +4,11 @@ It speaks the JSON-over-HTTP API from the assignment (POST /search, /list,
 /retrieve, /add) and keeps its data in a MockKBClient.
 """
 
-import json
-import random
-import threading
-import time
+import json, random, threading, time, argparse, sys
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
+from kb.errors import KBStorageError
+from kb.mock_client import MockKBClient
 
 def document_to_json(doc):
     return {
@@ -161,3 +159,98 @@ def serve_in_background(server):
         server.shutdown()
         server.server_close()
         thread.join()
+
+
+DEFAULT_PORT = 8080
+DEFAULT_FILE = "kb-server.json"
+
+
+def port_number(text):
+    try:
+        value = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a whole number")
+    if not 0 <= value <= 65535:
+        raise argparse.ArgumentTypeError("must be between 0 and 65535")
+    return value
+
+
+def milliseconds(text):
+    try:
+        value = float(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"{text!r} is not a number")
+    if value < 0:
+        raise argparse.ArgumentTypeError("must not be negative")
+    return value
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(
+        prog="python -m kb.fake_server",
+        description=(
+            "Run a fake Knowledge Base server (for tests and demos). It has "
+            "no passwords, so it only accepts connections from this computer "
+            "unless you change --host."
+        ),
+    )
+    parser.add_argument(
+        "--host", default="127.0.0.1", help="address to listen on (default 127.0.0.1)"
+    )
+    parser.add_argument(
+        "--port",
+        type=port_number,
+        default=DEFAULT_PORT,
+        help=f"port to listen on, 0 for any free port (default {DEFAULT_PORT})",
+    )
+    parser.add_argument(
+        "--file",
+        default=DEFAULT_FILE,
+        help=f"JSON file that stores the documents (default {DEFAULT_FILE})",
+    )
+    parser.add_argument(
+        "--latency",
+        nargs=2,
+        type=milliseconds,
+        metavar=("MIN", "MAX"),
+        help="wait a random MIN to MAX milliseconds before each answer",
+    )
+    args = parser.parse_args(argv)
+    if args.latency is not None:
+        low, high = args.latency
+        if low > high:
+            parser.error("--latency MIN must not be larger than MAX")
+        args.latency = (low / 1000, high / 1000)
+    return args
+
+
+def build_server(args):
+    return make_server(
+        MockKBClient(args.file), args.host, args.port, latency=args.latency
+    )
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    try:
+        server = build_server(args)
+    except (KBStorageError, OSError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+
+    host, port = server.server_address
+    print(
+        f"KB fake server listening on http://{host}:{port} (Ctrl+C to stop)",
+        flush=True,
+    )
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("stopped")
+    finally:
+        server.server_close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

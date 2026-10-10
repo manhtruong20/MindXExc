@@ -1,4 +1,4 @@
-import json
+import json, pytest
 import urllib.error
 import urllib.request
 
@@ -168,3 +168,65 @@ def test_add_validates_its_input(server_url):
         assert post(server_url, "/add", incomplete)[0] == 400
     assert post(server_url, "/add", {**good, "tags": "sms"})[0] == 400
     assert post(server_url, "/add", {**good, "title": 5})[0] == 400
+
+
+def test_server_options_have_safe_defaults():
+    from kb.fake_server import parse_args
+
+    args = parse_args([])
+
+    assert args.host == "127.0.0.1"
+    assert args.port == 8080
+    assert args.file == "kb-server.json"
+    assert args.latency is None
+
+
+def test_latency_is_given_in_milliseconds_and_converted_to_seconds():
+    from kb.fake_server import parse_args
+
+    assert parse_args(["--latency", "50", "150"]).latency == (0.05, 0.15)
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        ["--latency", "150", "50"],
+        ["--latency", "-1", "10"],
+        ["--latency", "a", "b"],
+        ["--latency", "50"],
+        ["--port", "70000"],
+        ["--port", "-1"],
+        ["--port", "abc"],
+    ],
+)
+def test_bad_options_are_rejected_with_exit_2(options):
+    from kb.fake_server import parse_args
+
+    with pytest.raises(SystemExit) as error:
+        parse_args(options)
+
+    assert error.value.code == 2
+
+
+def test_the_server_is_built_from_the_options(tmp_path):
+    from kb.fake_server import build_server, parse_args, serve_in_background
+
+    args = parse_args(["--port", "0", "--file", str(tmp_path / "s.json")])
+
+    with serve_in_background(build_server(args)) as url:
+        status, body = post(url, "/retrieve", {"docId": "doc-001"})
+
+    assert status == 200
+    assert body["document"]["id"] == "doc-001"
+
+
+def test_a_corrupted_data_file_stops_the_server_with_exit_1(tmp_path, capsys):
+    from kb.fake_server import main
+
+    path = tmp_path / "s.json"
+    path.write_text("{not json", encoding="utf-8")
+
+    code = main(["--port", "0", "--file", str(path)])
+
+    assert code == 1
+    assert "not valid JSON" in capsys.readouterr().err
