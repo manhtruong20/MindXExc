@@ -54,3 +54,36 @@ def test_an_unknown_path_is_404(server_url):
 
     assert status == 404
     assert "error" in body
+
+#fake server tests for latency simulation
+def test_latency_waits_a_random_time_inside_the_range(tmp_path):
+    from kb.fake_server import make_server, serve_in_background
+    from kb.mock_client import MockKBClient
+
+    waits = []
+    server = make_server(
+        MockKBClient(tmp_path / "kb.json"),
+        latency=(0.05, 0.15),
+        sleep=waits.append,
+    )
+
+    with serve_in_background(server) as url:
+        for _ in range(5):
+            post(url, "/retrieve", {"docId": "doc-001"})
+
+    assert len(waits) == 5
+    assert all(0 <= wait <= 0.15 for wait in waits)
+    assert len(set(waits)) > 1
+
+
+def test_there_is_no_delay_by_default(tmp_path):
+    from kb.fake_server import make_server, serve_in_background
+    from kb.mock_client import MockKBClient
+
+    waits = []
+    server = make_server(MockKBClient(tmp_path / "kb.json"), sleep=waits.append)
+
+    with serve_in_background(server) as url:
+        post(url, "/retrieve", {"docId": "doc-001"})
+
+    assert waits == []

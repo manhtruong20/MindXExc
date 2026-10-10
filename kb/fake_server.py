@@ -5,6 +5,10 @@ It speaks the JSON-over-HTTP API from the assignment (POST /search, /list,
 """
 
 import json
+import random
+import threading
+import time
+from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -37,9 +41,24 @@ ROUTES = {
 }
 
 
-def make_server(client, host="127.0.0.1", port=0):
+def make_server(client, host="127.0.0.1", port=0, latency=None, sleep=time.sleep):
+    """Build the fake server (not started yet).
+
+    latency: None for instant answers, or (min_seconds, max_seconds), for
+    example (0.05, 0.15). Every response then waits a random time in that
+    range, to imitate a real network. `sleep` can be replaced in tests.
+    """
+
+    def pause(arrived):
+        if latency is None:
+            return
+        remaining = random.uniform(*latency) - (time.monotonic() - arrived)
+        if remaining > 0:
+            sleep(remaining)
+
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
+            self.arrived = time.monotonic()
             route = ROUTES.get(self.path)
             if route is None:
                 self.send_json(404, {"error": f"unknown path {self.path}"})
@@ -56,6 +75,7 @@ def make_server(client, host="127.0.0.1", port=0):
             self.send_json(status, payload)
 
         def send_json(self, status, payload):
+            pause(self.arrived)
             data = json.dumps(payload).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
@@ -67,3 +87,16 @@ def make_server(client, host="127.0.0.1", port=0):
             pass
 
     return HTTPServer((host, port), Handler)
+
+@contextmanager
+def serve_in_background(server):
+    """Run `server` in a background thread; yield its base URL, stop it after."""
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        host, port = server.server_address
+        yield f"http://{host}:{port}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
