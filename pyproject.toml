@@ -9,12 +9,13 @@ requires-python = ">=3.10"
 
 [project.scripts]
 tickets = "ticket_manager.cli:main"
+kb = "kb.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-depends"]
 
 [tool.setuptools.packages.find]
-include = ["ticket_manager*"]
+include = ["ticket_manager*", "kb*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "test_kb"]
