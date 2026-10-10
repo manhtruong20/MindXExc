@@ -94,3 +94,77 @@ def test_there_is_no_delay_by_default(tmp_path):
         post(url, "/retrieve", {"docId": "doc-001"})
 
     assert waits == []
+
+
+def test_search_returns_results_with_a_match_type(server_url):
+    status, body = post(server_url, "/search", {"query": "deployment", "topK": 5})
+
+    assert status == 200
+    assert body["results"] == [
+        {
+            "id": "doc-006",
+            "title": "Deployment Guide",
+            "nodePath": "/docs/guides",
+            "matchType": "keyword",
+        }
+    ]
+
+
+def test_search_respects_top_k(server_url):
+    status, body = post(server_url, "/search", {"query": "email", "topK": 1})
+
+    assert [hit["id"] for hit in body["results"]] == ["doc-001"]
+
+
+def test_search_needs_a_query_and_a_positive_top_k(server_url):
+    assert post(server_url, "/search", {"topK": 5})[0] == 400
+    assert post(server_url, "/search", {"query": "x"})[0] == 400
+    assert post(server_url, "/search", {"query": "x", "topK": 0})[0] == 400
+    assert post(server_url, "/search", {"query": "x", "topK": "5"})[0] == 400
+
+
+def test_list_returns_the_documents_of_a_node(server_url):
+    status, body = post(
+        server_url, "/list", {"nodePath": "/templates/email", "limit": 10}
+    )
+
+    assert status == 200
+    assert [doc["id"] for doc in body["documents"]] == ["doc-001", "doc-004"]
+    assert body["documents"][0]["content"].startswith("Hi {name}")
+
+
+def test_list_respects_limit_and_validates_its_input(server_url):
+    _, body = post(server_url, "/list", {"nodePath": "/templates/email", "limit": 1})
+
+    assert [doc["id"] for doc in body["documents"]] == ["doc-001"]
+    assert post(server_url, "/list", {"limit": 1})[0] == 400
+    assert post(server_url, "/list", {"nodePath": "/x"})[0] == 400
+    assert post(server_url, "/list", {"nodePath": "/x", "limit": 0})[0] == 400
+
+
+def test_add_stores_a_document_that_can_then_be_retrieved(server_url):
+    new = {
+        "title": "Welcome SMS",
+        "content": "Hi!",
+        "nodePath": "/templates/sms",
+        "tags": ["sms"],
+    }
+
+    status, body = post(server_url, "/add", new)
+    doc_id = body["document"]["id"]
+    _, found = post(server_url, "/retrieve", {"docId": doc_id})
+
+    assert status == 201
+    assert doc_id.startswith("doc-")
+    assert found["document"]["title"] == "Welcome SMS"
+    assert found["document"]["tags"] == ["sms"]
+
+
+def test_add_validates_its_input(server_url):
+    good = {"title": "T", "content": "C", "nodePath": "/x", "tags": []}
+
+    for missing in good:
+        incomplete = {key: value for key, value in good.items() if key != missing}
+        assert post(server_url, "/add", incomplete)[0] == 400
+    assert post(server_url, "/add", {**good, "tags": "sms"})[0] == 400
+    assert post(server_url, "/add", {**good, "title": 5})[0] == 400

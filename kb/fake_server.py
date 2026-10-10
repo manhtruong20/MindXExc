@@ -27,6 +27,26 @@ def require(body, name):
         raise ValueError(f"missing field {name!r}")
     return body[name]
 
+def require_text(body, name):
+    value = require(body, name)
+    if not isinstance(value, str):
+        raise ValueError(f"{name} must be text")
+    return value
+
+
+def require_positive_int(body, name):
+    value = require(body, name)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise ValueError(f"{name} must be a whole number of 1 or more")
+    return value
+
+
+def require_tags(body):
+    tags = require(body, "tags")
+    if not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags):
+        raise ValueError("tags must be a list of text")
+    return tags
+
 
 def retrieve_route(client, body):
     doc_id = require(body, "docId")
@@ -35,9 +55,45 @@ def retrieve_route(client, body):
         return 404, {"error": f"no document with id {doc_id}"}
     return 200, {"document": document_to_json(doc)}
 
+def search_route(client, body):
+    query = require_text(body, "query")
+    top_k = require_positive_int(body, "topK")
+    results = client.search(query, top_k)
+    return 200, {
+        "results": [
+            {
+                "id": result.document.id,
+                "title": result.document.title,
+                "nodePath": result.document.node_path,
+                "matchType": result.match_type,
+            }
+            for result in results
+        ]
+    }
+
+
+def list_route(client, body):
+    node_path = require_text(body, "nodePath")
+    limit = require_positive_int(body, "limit")
+    docs = client.list_documents(node_path, limit)
+    return 200, {"documents": [document_to_json(doc) for doc in docs]}
+
+
+def add_route(client, body):
+    doc = client.add(
+        require_text(body, "title"),
+        require_text(body, "content"),
+        require_text(body, "nodePath"),
+        require_tags(body),
+    )
+    return 201, {"document": document_to_json(doc)}
+
 
 ROUTES = {
     "/retrieve": retrieve_route,
+    "/search": search_route,
+    "/list": list_route,
+    "/add": add_route,
 }
 
 
