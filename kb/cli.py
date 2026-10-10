@@ -18,7 +18,7 @@ def positive_int(text):
     return value
 
 def parse_tags(text):
-    return [tag.strip() for tag in text.split(",") if tag.strip()]
+    return list(dict.fromkeys(" ".join(text).split()))
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="kb")
@@ -79,7 +79,7 @@ def build_parser():
         help="add a text file as a document",
         description=(
             "Add a text file to the knowledge base. The document title is the "
-            "file name without its extension. Tags are separated by commas."
+            "file name without its extension. Tags are separated by whitespace."
         ),
     )
     add.add_argument("--file", required=True, help="path of the text file to add")
@@ -89,7 +89,12 @@ def build_parser():
         required=True,
         help="node to store it in, e.g. /templates/sms",
     )
-    add.add_argument("--tags", default="", help="comma-separated tags, e.g. sms,promo")
+    add.add_argument(
+        "--tags",
+        nargs="*",
+        default=[],
+        help="tags separated by spaces, e.g. --tags sms promo",
+    )
 
     return parser
 
