@@ -3,6 +3,7 @@ import sys
 
 from kb.factory import make_client
 from kb.formatting import preview
+from pathlib import Path
 
 DEFAULT_TOP_K = 5
 DEFAULT_LIMIT = 10
@@ -15,6 +16,9 @@ def positive_int(text):
     if value < 1:
         raise argparse.ArgumentTypeError("must be 1 or more")
     return value
+
+def parse_tags(text):
+    return [tag.strip() for tag in text.split(",") if tag.strip()]
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="kb")
@@ -70,6 +74,23 @@ def build_parser():
         help=f"maximum number of documents (default {DEFAULT_LIMIT})",
     )
 
+    add = commands.add_parser(
+        "add",
+        help="add a text file as a document",
+        description=(
+            "Add a text file to the knowledge base. The document title is the "
+            "file name without its extension. Tags are separated by commas."
+        ),
+    )
+    add.add_argument("--file", required=True, help="path of the text file to add")
+    add.add_argument(
+        "--path",
+        dest="node_path",
+        required=True,
+        help="node to store it in, e.g. /templates/sms",
+    )
+    add.add_argument("--tags", default="", help="comma-separated tags, e.g. sms,promo")
+
     return parser
 
 
@@ -110,6 +131,17 @@ def list_node(client, args):
         print(f"{doc.id}  {doc.title}  [{', '.join(doc.tags)}]")
     return 0
 
+def add_document(client, args):
+    path = Path(args.file)
+    try:
+        content = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as error:
+        print(f"error: cannot read {args.file}: {error}", file=sys.stderr)
+        return 1
+    doc = client.add(path.stem, content, args.node_path, parse_tags(args.tags))
+    print(f"Added {doc.id}  {doc.title}  {doc.node_path}")
+    return 0
+
 def main(argv=None, environ=None):
     try:
         args = build_parser().parse_args(argv)
@@ -128,3 +160,5 @@ def main(argv=None, environ=None):
         return search_documents(client, args)
     elif args.command == "list":
         return list_node(client, args)
+    elif args.command == "add":
+        return add_document(client, args)
