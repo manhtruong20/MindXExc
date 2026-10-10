@@ -5,6 +5,23 @@ import json
 def env_for(tmp_path):
     return {"KB_CLIENT": "mock", "KB_MOCK_FILE": str(tmp_path / "kb.json")}
 
+def type_answers(monkeypatch, *answers):
+    replies = iter(answers)
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
+
+
+def no_input(monkeypatch):
+    def raise_eof(prompt=""):
+        raise EOFError
+
+    monkeypatch.setattr("builtins.input", raise_eof)
+
+
+def retrieve_added(out, env, capsys):
+    doc_id = out.split()[1]
+    main(["retrieve", doc_id, "--full"], env)
+    return capsys.readouterr().out
+
 #retrieve command tests
 def test_retrieve_prints_the_document(tmp_path, capsys):
     code = main(["retrieve", "doc-001"], env_for(tmp_path))
@@ -210,17 +227,8 @@ def test_add_stores_the_file_as_a_document(tmp_path, capsys):
     assert "Hello SMS" in retrieved
 
 
-def test_add_works_without_tags(tmp_path):
-    path = make_input_file(tmp_path, "note.md", "text")
-
-    code = main(
-        ["add", "--file", str(path), "--path", "/notes"], env_for(tmp_path)
-    )
-
-    assert code == 0
-
-
-def test_add_with_a_missing_file_exits_1(tmp_path, capsys):
+def test_add_with_a_missing_file_exits_1(tmp_path, capsys, monkeypatch):
+    no_input(monkeypatch)
     missing = tmp_path / "missing.md"
 
     code = main(["add", "--file", str(missing), "--path", "/x"], env_for(tmp_path))
@@ -229,7 +237,8 @@ def test_add_with_a_missing_file_exits_1(tmp_path, capsys):
     assert "missing.md" in capsys.readouterr().err
 
 
-def test_add_with_a_file_that_is_not_text_exits_1(tmp_path, capsys):
+def test_add_with_a_file_that_is_not_text_exits_1(tmp_path, capsys, monkeypatch):
+    no_input(monkeypatch)
     path = tmp_path / "binary.bin"
     path.write_bytes(b"\xff\xfe\x00\xff")
 
@@ -237,13 +246,6 @@ def test_add_with_a_file_that_is_not_text_exits_1(tmp_path, capsys):
 
     assert code == 1
     assert "binary.bin" in capsys.readouterr().err
-
-
-def test_add_requires_a_file_and_a_path(tmp_path):
-    env = env_for(tmp_path)
-
-    assert main(["add", "--path", "/x"], env) == 2
-    assert main(["add", "--file", "a.md"], env) == 2
 
 
 def test_add_splits_tags_on_whitespace_and_drops_duplicates(tmp_path, capsys):
@@ -270,3 +272,103 @@ def test_add_accepts_tags_with_no_values(tmp_path, capsys):
 
     assert code == 0
     assert "tags: \n" in capsys.readouterr().out
+
+
+def test_add_asks_for_a_missing_file(tmp_path, capsys, monkeypatch):
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, str(path))
+
+    code = main(["add", "--path", "/n", "--tags"], env_for(tmp_path))
+
+    assert code == 0
+    assert capsys.readouterr().out.startswith("Added doc-")
+
+
+def test_add_asks_again_when_a_given_file_cannot_be_read(tmp_path, capsys, monkeypatch):
+    good = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, str(good))
+    missing = tmp_path / "missing.md"
+
+    code = main(
+        ["add", "--file", str(missing), "--path", "/n", "--tags"], env_for(tmp_path)
+    )
+
+    captured = capsys.readouterr()
+    assert code == 0
+    assert "Invalid file" in captured.err
+    assert captured.out.startswith("Added doc-")
+
+
+def test_add_asks_for_a_missing_node_path(tmp_path, capsys, monkeypatch):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, "/templates/sms")
+
+    main(["add", "--file", str(path), "--tags"], env)
+
+    out = retrieve_added(capsys.readouterr().out, env, capsys)
+    assert "node: /templates/sms" in out
+
+
+def test_add_asks_again_when_the_node_path_is_blank(tmp_path, capsys, monkeypatch):
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, "", "/n")
+
+    code = main(["add", "--file", str(path), "--tags"], env_for(tmp_path))
+
+    captured = capsys.readouterr()
+    assert code == 0
+    assert "Invalid path" in captured.err
+
+
+def test_add_asks_for_tags_and_an_empty_answer_means_none(tmp_path, capsys, monkeypatch):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, "")
+
+    code = main(["add", "--file", str(path), "--path", "/n"], env)
+
+    assert code == 0
+    assert "tags: \n" in retrieve_added(capsys.readouterr().out, env, capsys)
+
+
+def test_add_splits_the_typed_tags(tmp_path, capsys, monkeypatch):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, "sms promo")
+
+    main(["add", "--file", str(path), "--path", "/n"], env)
+
+    assert "tags: sms, promo\n" in retrieve_added(capsys.readouterr().out, env, capsys)
+
+
+def test_add_asks_again_when_tags_are_invalid(tmp_path, capsys, monkeypatch):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, "-urgent", "urgent")
+
+    code = main(["add", "--file", str(path), "--path", "/n"], env)
+
+    captured = capsys.readouterr()
+    assert code == 0
+    assert "Invalid tags" in captured.err
+    assert "tags: urgent\n" in retrieve_added(captured.out, env, capsys)
+
+
+def test_add_asks_again_when_a_dash_tag_is_given_with_equals(tmp_path, capsys, monkeypatch):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+    type_answers(monkeypatch, "urgent")
+
+    main(["add", "--file", str(path), "--path", "/n", "--tags=-urgent"], env)
+
+    assert "tags: urgent\n" in retrieve_added(capsys.readouterr().out, env, capsys)
+
+
+def test_add_without_any_input_exits_1(tmp_path, capsys, monkeypatch):
+    no_input(monkeypatch)
+
+    code = main(["add"], env_for(tmp_path))
+
+    assert code == 1
+    assert "no input available" in capsys.readouterr().err
