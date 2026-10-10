@@ -6,24 +6,30 @@ from kb.mock_client import MockKBClient
 CLIENT_KINDS = ["mock", "http"]
 
 @pytest.fixture(params=CLIENT_KINDS)
-def client(request, tmp_path):
-    """A fresh client holding the six sample documents (doc-001 ... doc-006).
+def connect(request, tmp_path):
+    """Yield a function that opens a NEW client on the same backend each call.
 
-    Every client kind must start from this same data, because the contract
-    tests rely on it. The "http" kind talks to a fake server over a real
-    connection.
+    Each backend starts with the six sample documents (doc-001 ... doc-006).
+    Calling connect() twice gives two separate client objects that share the
+    same stored data, like two separate `kb` commands.
     """
     if request.param == "mock":
-        yield MockKBClient(tmp_path / "kb.json")
+        path = tmp_path / "kb.json"
+        yield lambda: MockKBClient(path)
     elif request.param == "http":
         from kb.fake_server import make_server, serve_in_background
         from kb.http_client import HTTPKBClient
 
         server = make_server(MockKBClient(tmp_path / "server-kb.json"))
         with serve_in_background(server) as url:
-            yield HTTPKBClient(url)
+            yield lambda: HTTPKBClient(url)
     else:
         raise NotImplementedError(request.param)
+
+
+@pytest.fixture
+def client(connect):
+    return connect()
 
 import threading
 

@@ -103,12 +103,10 @@ def test_added_document_can_be_found_by_search(client):
     assert [r.document.title for r in results] == ["Welcome SMS"]
 
 
-def test_added_document_survives_a_new_client(client):
-    doc = client.add("Welcome SMS", "Hi", "/templates/sms", ["sms"])
+def test_a_document_added_by_one_client_is_found_by_a_new_client(connect):
+    doc = connect().add("Welcome SMS", "Hi", "/templates/sms", ["sms"])
 
-    second_client = type(client)(client._path)
-
-    assert second_client.retrieve(doc.id) == doc
+    assert connect().retrieve(doc.id) == doc
 
 
 #Contract tests
