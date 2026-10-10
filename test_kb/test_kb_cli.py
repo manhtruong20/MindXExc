@@ -193,7 +193,7 @@ def test_add_stores_the_file_as_a_document(tmp_path, capsys):
     path = make_input_file(tmp_path, "welcome-sms.md", "Hello SMS")
 
     code = main(
-        ["add", "--file", str(path), "--path", "/templates/sms", "--tags", "sms,promo"],
+        ["add", "--file", str(path), "--path", "/templates/sms", "--tags", "sms promo"],
         env,
     )
 
@@ -244,3 +244,29 @@ def test_add_requires_a_file_and_a_path(tmp_path):
 
     assert main(["add", "--path", "/x"], env) == 2
     assert main(["add", "--file", "a.md"], env) == 2
+
+
+def test_add_splits_tags_on_whitespace_and_drops_duplicates(tmp_path, capsys):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+
+    main(
+        ["add", "--file", str(path), "--path", "/n", "--tags", "sms", "promo sale", "sms"],
+        env,
+    )
+    doc_id = capsys.readouterr().out.split()[1]
+    main(["retrieve", doc_id], env)
+
+    assert "tags: sms, promo, sale\n" in capsys.readouterr().out
+
+
+def test_add_accepts_tags_with_no_values(tmp_path, capsys):
+    env = env_for(tmp_path)
+    path = make_input_file(tmp_path, "note.md", "text")
+
+    code = main(["add", "--file", str(path), "--path", "/n", "--tags"], env)
+    doc_id = capsys.readouterr().out.split()[1]
+    main(["retrieve", doc_id], env)
+
+    assert code == 0
+    assert "tags: \n" in capsys.readouterr().out
