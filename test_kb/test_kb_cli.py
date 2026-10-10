@@ -218,3 +218,29 @@ def test_add_works_without_tags(tmp_path):
     )
 
     assert code == 0
+
+
+def test_add_with_a_missing_file_exits_1(tmp_path, capsys):
+    missing = tmp_path / "missing.md"
+
+    code = main(["add", "--file", str(missing), "--path", "/x"], env_for(tmp_path))
+
+    assert code == 1
+    assert "missing.md" in capsys.readouterr().err
+
+
+def test_add_with_a_file_that_is_not_text_exits_1(tmp_path, capsys):
+    path = tmp_path / "binary.bin"
+    path.write_bytes(b"\xff\xfe\x00\xff")
+
+    code = main(["add", "--file", str(path), "--path", "/x"], env_for(tmp_path))
+
+    assert code == 1
+    assert "binary.bin" in capsys.readouterr().err
+
+
+def test_add_requires_a_file_and_a_path(tmp_path):
+    env = env_for(tmp_path)
+
+    assert main(["add", "--path", "/x"], env) == 2
+    assert main(["add", "--file", "a.md"], env) == 2
