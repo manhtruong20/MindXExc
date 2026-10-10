@@ -152,23 +152,25 @@ def retrieve_document(client, args):
     print(doc.content if args.full else preview(doc.content))
     return 0
 
+def print_lines(lines):
+    """Print one line per item, or a message when there is nothing to show."""
+    if not lines:
+        print("No documents found.")
+        return
+    for line in lines:
+        print(line)
+
 def search_documents(client, args):
     results = client.search(args.query, args.top_k)
-    if not results:
-        print("No documents found.")
-        return 0
-    for result in results:
-        doc = result.document
-        print(f"{doc.id}  {doc.title}  {doc.node_path}  [{result.match_type}]")
+    print_lines([
+        f"{r.document.id}  {r.document.title}  {r.document.node_path}  [{r.match_type}]"
+        for r in results
+    ])
     return 0
 
 def list_node(client, args):
     docs = client.list_documents(args.node, args.limit)
-    if not docs:
-        print("No documents found.")
-        return 0
-    for doc in docs:
-        print(f"{doc.id}  {doc.title}  [{', '.join(doc.tags)}]")
+    print_lines([f"{d.id}  {d.title}  [{', '.join(d.tags)}]" for d in docs])
     return 0
 
 def add_document(client, args):
