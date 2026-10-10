@@ -60,12 +60,17 @@ def make_server(client, host="127.0.0.1", port=0, latency=None, sleep=time.sleep
         def do_POST(self):
             self.arrived = time.monotonic()
             route = ROUTES.get(self.path)
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                raw_body = self.rfile.read(length) or b"{}"
+            except ValueError as error:
+                self.send_json(400, {"error": f"bad request: {error}"})
+                return
             if route is None:
                 self.send_json(404, {"error": f"unknown path {self.path}"})
                 return
             try:
-                length = int(self.headers.get("Content-Length", 0))
-                body = json.loads(self.rfile.read(length) or b"{}")
+                body = json.loads(raw_body)
                 if not isinstance(body, dict):
                     raise ValueError("the body must be a JSON object")
                 status, payload = route(client, body)
