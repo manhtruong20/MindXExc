@@ -372,3 +372,54 @@ def test_add_without_any_input_exits_1(tmp_path, capsys, monkeypatch):
 
     assert code == 1
     assert "no input available" in capsys.readouterr().err
+
+
+#test KB CLI works over HTTP
+def http_env(url):
+    return {"KB_CLIENT": "http", "KB_API_URL": url}
+
+
+def argv_for(name, tmp_path):
+    note = tmp_path / "note.md"
+    note.write_text("text", encoding="utf-8")
+    return {
+        "retrieve": ["retrieve", "doc-001"],
+        "search": ["search", "email"],
+        "list": ["list", "--node", "/x"],
+        "add": ["add", "--file", str(note), "--path", "/x", "--tags"],
+    }[name]
+
+
+@pytest.mark.parametrize("name", ["retrieve", "search", "list", "add"])
+def test_an_unreachable_server_exits_1_with_a_message(name, tmp_path, capsys, dead_url):
+    code = main(argv_for(name, tmp_path), http_env(dead_url))
+
+    assert code == 1
+    assert "cannot reach" in capsys.readouterr().err
+
+
+def test_http_without_an_address_exits_1(capsys):
+    code = main(["retrieve", "doc-001"], {"KB_CLIENT": "http"})
+
+    assert code == 1
+    assert "KB_API_URL" in capsys.readouterr().err
+
+
+def test_all_four_commands_work_through_the_http_client(server_url, tmp_path, capsys):
+    env = http_env(server_url)
+
+    assert main(["retrieve", "doc-001"], env) == 0
+    assert "Customer Response Template" in capsys.readouterr().out
+
+    assert main(["search", "deployment"], env) == 0
+    assert "doc-006  Deployment Guide  /docs/guides  [keyword]" in capsys.readouterr().out
+
+    assert main(["list", "--node", "/templates/email"], env) == 0
+    assert "doc-004" in capsys.readouterr().out
+
+    note = tmp_path / "welcome-sms.md"
+    note.write_text("Hello SMS", encoding="utf-8")
+    assert main(["add", "--file", str(note), "--path", "/templates/sms", "--tags", "sms"], env) == 0
+    doc_id = capsys.readouterr().out.split()[1]
+    assert main(["retrieve", doc_id, "--full"], env) == 0
+    assert "Hello SMS" in capsys.readouterr().out

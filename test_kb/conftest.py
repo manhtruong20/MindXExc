@@ -1,4 +1,4 @@
-import pytest
+import pytest, socket
 
 from kb.mock_client import MockKBClient
 
@@ -47,3 +47,12 @@ def server_url(tmp_path):
     server.shutdown()
     server.server_close()
     thread.join()
+
+
+@pytest.fixture
+def dead_url():
+    """A URL that nothing is listening on."""
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        port = sock.getsockname()[1]
+    return f"http://127.0.0.1:{port}"
