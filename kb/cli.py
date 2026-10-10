@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+from kb.errors import KBApiError
 from kb.factory import make_client
 from kb.formatting import PREVIEW_LINES, PREVIEW_WIDTH, preview
 from kb.prompts import ask_valid, check_node_path, check_tags, read_text_file
@@ -175,4 +176,7 @@ def main(argv=None, environ=None):
             "Missing arguments and cannot ask for them: no input available",
             file=sys.stderr,
         )
+        return 1
+    except KBApiError as error:
+        print(f"error: {error}", file=sys.stderr)
         return 1
