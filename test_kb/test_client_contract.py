@@ -5,7 +5,7 @@ holding the six sample documents doc-001 ... doc-006. To check a new kind of
 client, add it to CLIENT_KINDS in conftest.py.
 """
 
-from xml.dom.minidom import Document
+from kb.document import Document
 from kb.search_result import SearchResult
 
 
