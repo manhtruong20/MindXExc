@@ -1,8 +1,8 @@
 The snapshot of progess for each week can be found in repo's tag
 document of each week:
-_week1_excircise.md
-_week2_excircise.md
-_week3_excircise.md
+- _week1_excircise.md
+- _week2_excircise.md
+- _week3_excircise.md
 
 # Week-2 tag: Ticket Manager
 
