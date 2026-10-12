@@ -1,6 +1,8 @@
 import argparse
 import sys
+from pathlib import Path
 
+from dotenv import load_dotenv
 from kb.errors import KBApiError
 from kb.factory import make_client
 from kb.formatting import PREVIEW_LINES, PREVIEW_WIDTH, preview
@@ -162,6 +164,9 @@ def main(argv=None, environ=None):
         args = build_parser().parse_args(argv)
     except SystemExit as error:
         return error.code
+
+    if environ is None:
+        load_dotenv(dotenv_path=Path.cwd() / ".env", override=False)
 
     try:
         client = make_client(environ)

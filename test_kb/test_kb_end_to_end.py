@@ -25,6 +25,38 @@ def test_python_dash_m_kb_retrieves_a_document(tmp_path):
     assert "Customer Response Template" in result.stdout
 
 
+def test_cli_loads_dotenv_without_overriding_shell_variables(tmp_path):
+    dotenv_mock_file = tmp_path / "from-dotenv.json"
+    shell_mock_file = tmp_path / "from-shell.json"
+    note = tmp_path / "welcome-sms.md"
+    note.write_text("Hello SMS", encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        f"KB_CLIENT=mock\nKB_MOCK_FILE={dotenv_mock_file}\n",
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    for name in ("KB_CLIENT", "KB_MOCK_FILE", "KB_API_URL"):
+        env.pop(name, None)
+    env["KB_MOCK_FILE"] = str(shell_mock_file)
+
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "kb", "add",
+            "--file", str(note),
+            "--path", "/templates/sms",
+            "--tags",
+        ],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert shell_mock_file.exists()
+    assert not dotenv_mock_file.exists()
+
+
 def test_a_document_added_by_one_process_is_found_by_the_next(tmp_path):
     note = tmp_path / "welcome-sms.md"
     note.write_text("Hello SMS", encoding="utf-8")
